@@ -101,12 +101,17 @@
       font-size:13px;transition:all .2s;margin-top:1px;
     }
     .supp-toggle.selected .supp-check{background:var(--cyan);border-color:var(--cyan);color:#fff;}
-    .supp-body{flex:1;}
-    .supp-top2{display:flex;justify-content:space-between;align-items:flex-start;}
-    .supp-name{font-size:14px;font-weight:700;color:var(--navy);}
+    .supp-body{flex:1;min-width:0;}
+    .supp-top2{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+    .supp-name{font-size:14px;font-weight:700;color:var(--navy);flex:1;min-width:0;}
+    .supp-right{text-align:right;flex-shrink:0;}
     .supp-pricetag{font-size:16px;font-weight:800;color:var(--cyan);}
     .supp-dur{font-size:12px;color:var(--text-secondary);}
-    .supp-desc{font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:4px;}
+    .supp-desc{font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:6px;}
+    /* Description formule en tirets */
+    .f-desc-list{list-style:none;padding:0;margin-bottom:8px;}
+    .f-desc-list li{font-size:11px;color:var(--text-secondary);line-height:1.5;padding-left:10px;position:relative;margin-bottom:2px;}
+    .f-desc-list li::before{content:'—';position:absolute;left:0;color:var(--disabled);}
     .supp-note-wax{font-size:11px;color:var(--text-secondary);margin-top:4px;}
     .supp-incl-badge{background:#EFFDF9;border-radius:6px;padding:4px 10px;font-size:11px;color:#047857;font-weight:600;margin-top:8px;display:inline-block;}
 
@@ -509,13 +514,15 @@ function initStep1(cfg) {
   grid.innerHTML = cfg.FORMULES.map(f => {
     const badge = f.badge ? `<span class="f-badge ${f.badge==='Populaire'?'pop':'prem'}">${f.badge}</span>` : '';
     const incl  = f.inclut_supplements ? `<div class="f-incl">✅ Inclus</div>` : '';
+    const descItems = f.description.split(', ');
+    const descHtml  = `<ul class="f-desc-list">${descItems.map(d => `<li>${d}</li>`).join('')}</ul>`;
     return `<div class="f-card" data-id="${f.id}" onclick="selectFormule('${f.id}')">
       ${badge}
       <span class="f-emoji">${f.emoji}</span>
       <div class="f-name">${f.nom}</div>
       <div class="f-price"><sup>€</sup>${f.prix}</div>
       <div class="f-dur">⏱ ${f.duree}</div>
-      <div class="f-desc">${f.description}</div>
+      ${descHtml}
       ${incl}
       <div class="f-select-indicator">✓ Sélectionnée</div>
     </div>`;
@@ -529,7 +536,7 @@ function initStep1(cfg) {
       <div class="supp-body">
         <div class="supp-top2">
           <span class="supp-name">${s.emoji} ${s.nom}</span>
-          <div style="text-align:right">
+          <div class="supp-right">
             <div class="supp-pricetag">+${s.prix}€</div>
             <div class="supp-dur">+${s.duree_extra}</div>
           </div>
