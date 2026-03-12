@@ -59,41 +59,28 @@
     .step-title{font-size:20px;font-weight:800;color:var(--navy);margin-bottom:6px;}
     .step-sub{font-size:14px;color:var(--text-secondary);margin-bottom:24px;}
 
-    /* ── CAROUSEL FORMULE (étape 1) ─────────────── */
-    .car-ctrl{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-    .car-dots{display:flex;gap:7px;}
-    .car-dot{width:8px;height:8px;border-radius:50%;background:var(--border);cursor:pointer;transition:all .2s;}
-    .car-dot.active{width:22px;border-radius:4px;background:var(--cyan);}
-    .car-arrows{display:flex;gap:8px;}
-    .car-arrow{
-      width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
-      background:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;
-      color:var(--text-secondary);transition:all .2s;-webkit-tap-highlight-color:transparent;
-    }
-    .car-arrow:hover{border-color:var(--cyan);color:var(--cyan);}
-    .car-viewport{overflow:hidden;border-radius:var(--radius);}
-    .car-track{display:flex;transition:transform .3s ease;will-change:transform;}
-    .car-slide{flex:0 0 100%;}
+    /* ── GRILLE FORMULES (étape 1) ───────────────── */
+    .formules-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
 
     /* Card formule cliquable */
     .f-card{
       background:var(--bg-card);border:2px solid var(--border);
-      border-radius:var(--radius);padding:22px 18px;box-shadow:var(--shadow);
+      border-radius:var(--radius);padding:14px 12px;box-shadow:var(--shadow);
       cursor:pointer;transition:all .2s;position:relative;overflow:hidden;
     }
     .f-card:hover{border-color:rgba(0,170,255,.4);}
     .f-card.selected{border-color:var(--cyan);background:#F0F9FF;}
-    .f-badge{position:absolute;top:0;right:0;font-size:10px;font-weight:700;padding:5px 14px;border-radius:0 var(--radius) 0 10px;text-transform:uppercase;letter-spacing:.5px;}
+    .f-badge{position:absolute;top:0;right:0;font-size:9px;font-weight:700;padding:4px 10px;border-radius:0 var(--radius) 0 8px;text-transform:uppercase;letter-spacing:.5px;}
     .f-badge.pop{background:var(--cyan);color:#fff;}
     .f-badge.prem{background:#F59E0B;color:#fff;}
-    .f-emoji{font-size:30px;margin-bottom:10px;display:block;}
-    .f-name{font-size:17px;font-weight:800;color:var(--navy);margin-bottom:6px;}
-    .f-price{font-size:38px;font-weight:800;color:var(--navy);line-height:1;}
-    .f-price sup{font-size:20px;vertical-align:top;margin-top:5px;}
-    .f-dur{font-size:13px;color:var(--text-secondary);margin:6px 0 12px;}
-    .f-desc{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:12px;}
-    .f-incl{background:#EFFDF9;border:1px solid #A7F3D0;border-radius:8px;padding:8px 12px;font-size:12px;color:#047857;font-weight:600;}
-    .f-select-indicator{display:none;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--cyan);margin-top:12px;}
+    .f-emoji{font-size:24px;margin-bottom:6px;display:block;}
+    .f-name{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:4px;line-height:1.3;}
+    .f-price{font-size:28px;font-weight:800;color:var(--navy);line-height:1;}
+    .f-price sup{font-size:14px;vertical-align:top;margin-top:4px;}
+    .f-dur{font-size:11px;color:var(--text-secondary);margin:4px 0 8px;}
+    .f-desc{font-size:11px;color:var(--text-secondary);line-height:1.5;margin-bottom:8px;}
+    .f-incl{background:#EFFDF9;border:1px solid #A7F3D0;border-radius:6px;padding:5px 8px;font-size:10px;color:#047857;font-weight:600;}
+    .f-select-indicator{display:none;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--cyan);margin-top:8px;}
     .f-card.selected .f-select-indicator{display:flex;}
 
     /* ── SUPPLÉMENTS (étape 1) ──────────────────── */
@@ -287,16 +274,7 @@
     <h2 class="step-title">Choisissez votre formule</h2>
     <p class="step-sub">Cliquez sur une formule pour la sélectionner</p>
 
-    <div class="car-ctrl">
-      <div class="car-dots" id="car-dots"></div>
-      <div class="car-arrows">
-        <button class="car-arrow" id="car-prev" aria-label="Précédent">‹</button>
-        <button class="car-arrow" id="car-next" aria-label="Suivant">›</button>
-      </div>
-    </div>
-    <div class="car-viewport">
-      <div class="car-track" id="car-track"></div>
-    </div>
+    <div class="formules-grid" id="formules-grid"></div>
 
     <div class="supps-wrap" id="supps-wrap" style="display:none;">
       <div class="supps-title">Ajouter des options</div>
@@ -424,8 +402,6 @@ const state = {
   supplements:   new Set(),
   date:          null,   // 'YYYY-MM-DD'
   heure:         null,
-  carIdx:        0,
-  touchX:        0,
   viewYear:      new Date().getFullYear(),
   viewMonth:     new Date().getMonth() + 1, // 1-12
   dispoMois:     {},     // keyed by 'YYYY-MM-DD'
@@ -525,50 +501,25 @@ function updateProgress() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ÉTAPE 1 — CAROUSEL + SUPPLÉMENTS
+// ÉTAPE 1 — GRILLE 2x2 + SUPPLÉMENTS
 // ═══════════════════════════════════════════════════════════════════════════════
 function initStep1(cfg) {
-  const track   = document.getElementById('car-track');
-  const dotsEl  = document.getElementById('car-dots');
-
-  function buildCard(f) {
+  // Grille 2×2 des formules
+  const grid = document.getElementById('formules-grid');
+  grid.innerHTML = cfg.FORMULES.map(f => {
     const badge = f.badge ? `<span class="f-badge ${f.badge==='Populaire'?'pop':'prem'}">${f.badge}</span>` : '';
-    const incl  = f.inclut_supplements ? `<div class="f-incl">✅ Extraction eau &amp; Cire déjà incluses</div>` : '';
-    return `<div class="car-slide">
-      <div class="f-card" data-id="${f.id}" onclick="selectFormule('${f.id}')">
-        ${badge}
-        <span class="f-emoji">${f.emoji}</span>
-        <div class="f-name">${f.nom}</div>
-        <div class="f-price"><sup>€</sup>${f.prix}</div>
-        <div class="f-dur">⏱ ${f.duree}</div>
-        <div class="f-desc">${f.description}</div>
-        ${incl}
-        <div class="f-select-indicator">✓ Sélectionnée</div>
-      </div>
+    const incl  = f.inclut_supplements ? `<div class="f-incl">✅ Inclus</div>` : '';
+    return `<div class="f-card" data-id="${f.id}" onclick="selectFormule('${f.id}')">
+      ${badge}
+      <span class="f-emoji">${f.emoji}</span>
+      <div class="f-name">${f.nom}</div>
+      <div class="f-price"><sup>€</sup>${f.prix}</div>
+      <div class="f-dur">⏱ ${f.duree}</div>
+      <div class="f-desc">${f.description}</div>
+      ${incl}
+      <div class="f-select-indicator">✓ Sélectionnée</div>
     </div>`;
-  }
-
-  track.innerHTML = cfg.FORMULES.map(buildCard).join('');
-  dotsEl.innerHTML = cfg.FORMULES.map((_,i) =>
-    `<div class="car-dot${i===0?' active':''}" data-i="${i}"></div>`).join('');
-
-  dotsEl.querySelectorAll('.car-dot').forEach(d =>
-    d.addEventListener('click', () => carGoTo(+d.dataset.i)));
-
-  document.getElementById('car-prev').onclick = () => carGoTo(state.carIdx - 1);
-  document.getElementById('car-next').onclick = () => carGoTo(state.carIdx + 1);
-
-  track.addEventListener('touchstart', e => { state.touchX = e.touches[0].clientX; }, { passive: true });
-  track.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - state.touchX;
-    if (Math.abs(dx) > 40) carGoTo(dx < 0 ? state.carIdx + 1 : state.carIdx - 1);
-  });
-
-  document.addEventListener('keydown', e => {
-    if (state.step !== 1) return;
-    if (e.key === 'ArrowLeft')  carGoTo(state.carIdx - 1);
-    if (e.key === 'ArrowRight') carGoTo(state.carIdx + 1);
-  });
+  }).join('');
 
   // Suppléments
   const suppsList = document.getElementById('supps-list');
@@ -588,23 +539,11 @@ function initStep1(cfg) {
       </div>
     </div>`).join('');
 
-  // Pré-sélection via URL
+  // Pré-sélection via URL ?formule=ID
   const urlParam = new URLSearchParams(window.location.search).get('formule');
-  if (urlParam) {
-    const idx = cfg.FORMULES.findIndex(f => f.id === urlParam);
-    if (idx >= 0) {
-      carGoTo(idx);
-      selectFormule(urlParam);
-    }
+  if (urlParam && cfg.FORMULES.find(f => f.id === urlParam)) {
+    selectFormule(urlParam);
   }
-}
-
-function carGoTo(i) {
-  const count = state.cfg.FORMULES.length;
-  state.carIdx = ((i % count) + count) % count;
-  document.getElementById('car-track').style.transform = `translateX(-${state.carIdx * 100}%)`;
-  document.querySelectorAll('#car-dots .car-dot').forEach((d, j) =>
-    d.classList.toggle('active', j === state.carIdx));
 }
 
 function selectFormule(id) {
@@ -811,7 +750,7 @@ function renderCreneaux(data) {
   document.getElementById('creneaux-apres').innerHTML =
     state.cfg.CRENEAUX.apres_midi.map(h => creneauBtn(h, creneaux_pris)).join('');
 
-  section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  document.getElementById('creneaux-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function creneauBtn(heure, pris) {

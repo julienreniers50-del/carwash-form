@@ -5,7 +5,7 @@
 const ENTREPRISE = {
   nom:       'AutoClean',
   slogan:    'Une voiture plus que Clean',
-  zone:      'Yttre & Enghien — Hainaut, Belgique',
+  zone:      'Ittre & Enghien — Hainaut, Belgique',
   email:     process.env.OWNER_EMAIL        || '',
   telephone: process.env.OWNER_PHONE_NUMBER || ''
 };
