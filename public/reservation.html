@@ -2,759 +2,942 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>AutoClean — Réservation</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <style>
-    :root {
-      --bg-page:    #FFFFFF;
-      --bg-surface: #F4F8FF;
-      --bg-card:    #FFFFFF;
-      --navy:       #0D1B3E;
-      --cyan:       #00AAFF;
-      --cyan-light: #33BBFF;
-      --text:       #0D1B3E;
-      --text-sec:   #4A6080;
-      --border:     #E0ECFF;
-      --border-a:   #00AAFF;
-      --success:    #00D4AA;
-      --error:      #FF4757;
-      --gold:       #F59E0B;
-      --radius:     14px;
-      --radius-sm:  10px;
-      --shadow:     0 2px 12px rgba(13,27,62,.07);
+    :root{
+      --bg-page:#FFFFFF; --bg-surface:#F4F8FF; --bg-card:#FFFFFF;
+      --navy:#0D1B3E; --cyan:#00AAFF; --cyan-light:#33BBFF;
+      --text-primary:#0D1B3E; --text-secondary:#4A6080;
+      --border:#E0ECFF; --success:#00D4AA; --error:#FF4757; --disabled:#C0CDD8;
+      --radius:14px; --shadow:0 2px 12px rgba(13,27,62,.07);
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    html{scroll-behavior:smooth;}
     body{
-      font-family:'Plus Jakarta Sans',sans-serif;
-      background:var(--bg-surface);color:var(--text);
-      min-height:100vh;-webkit-font-smoothing:antialiased;
+      font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg-surface);
+      color:var(--text-primary);min-height:100vh;-webkit-font-smoothing:antialiased;
+      padding-bottom:80px;
     }
 
-    /* ── HEADER ──────────────────────────────────── */
+    /* ── HEADER ─────────────────────────────────── */
     .res-header{
       background:#fff;border-bottom:1px solid var(--border);
-      padding:14px 20px;display:flex;align-items:center;justify-content:space-between;
+      padding:12px 20px;display:flex;align-items:center;justify-content:space-between;
       position:sticky;top:0;z-index:100;
     }
-    .back-link{
-      display:flex;align-items:center;gap:6px;
-      font-size:14px;font-weight:600;color:var(--text-sec);
-      text-decoration:none;transition:color .2s;
-    }
+    .back-link{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--text-secondary);text-decoration:none;transition:color .2s;}
     .back-link:hover{color:var(--cyan);}
-    .res-header-title{font-size:15px;font-weight:700;color:var(--navy);}
-    .res-logo{display:flex;align-items:center;gap:8px;}
-    .res-logo img{height:28px;object-fit:contain;}
-    .res-logo-txt{font-size:15px;font-weight:800;color:var(--navy);}
-    .res-logo-txt span{color:var(--cyan);}
+    .header-logo{display:flex;align-items:center;gap:8px;}
+    .header-logo img{height:32px;object-fit:contain;}
+    .header-logo span{font-size:15px;font-weight:800;color:var(--navy);}
 
-    /* ── PROGRESS ────────────────────────────────── */
-    .progress-wrap{
-      background:#fff;border-bottom:1px solid var(--border);
-      padding:16px 20px 0;
-    }
-    .progress{display:flex;max-width:480px;margin:0 auto;}
-    .ps{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;}
-    .ps:not(:last-child)::after{
-      content:'';position:absolute;top:14px;left:50%;
-      width:100%;height:2px;background:var(--border);z-index:0;
-    }
-    .ps.done:not(:last-child)::after{background:var(--success);}
-    .ps.active:not(:last-child)::after{background:var(--border);}
-    .ps-num{
-      width:28px;height:28px;border-radius:50%;z-index:1;
-      border:2px solid var(--border);background:#fff;
+    /* ── PROGRESS BAR ───────────────────────────── */
+    .progress-bar{background:#fff;border-bottom:1px solid var(--border);padding:14px 20px;}
+    .steps{display:flex;align-items:center;justify-content:center;gap:0;max-width:400px;margin:0 auto;}
+    .step-item{display:flex;flex-direction:column;align-items:center;flex:1;}
+    .step-circle{
+      width:28px;height:28px;border-radius:50%;border:2px solid var(--disabled);
       display:flex;align-items:center;justify-content:center;
-      font-size:11px;font-weight:700;color:var(--text-sec);
-      transition:all .3s;
+      font-size:12px;font-weight:700;color:var(--disabled);
+      background:#fff;transition:all .3s;position:relative;z-index:1;
     }
-    .ps.active .ps-num{border-color:var(--cyan);background:var(--cyan);color:#fff;}
-    .ps.done .ps-num{border-color:var(--success);background:var(--success);color:#fff;}
-    .ps-lbl{font-size:10px;color:var(--text-sec);font-weight:500;padding-bottom:12px;text-align:center;}
-    .ps.active .ps-lbl{color:var(--cyan);font-weight:700;}
-    .ps.done .ps-lbl{color:var(--success);}
+    .step-circle.active{border-color:var(--cyan);background:var(--cyan);color:#fff;}
+    .step-circle.done{border-color:var(--success);background:var(--success);color:#fff;}
+    .step-label{font-size:10px;font-weight:600;color:var(--disabled);margin-top:4px;text-align:center;transition:color .3s;}
+    .step-label.active{color:var(--cyan);}
+    .step-label.done{color:var(--success);}
+    .step-line{flex:1;height:2px;background:var(--disabled);margin-bottom:16px;transition:background .3s;}
+    .step-line.done{background:var(--success);}
 
-    /* ── MAIN ────────────────────────────────────── */
-    .res-main{padding:20px 16px 140px;max-width:480px;margin:0 auto;}
-    .step{display:none;}
-    .step.active{display:block;animation:fadeIn .25s ease;}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+    /* ── ÉTAPES ─────────────────────────────────── */
+    .step-content{display:none;opacity:0;transition:opacity .2s;}
+    .step-content.active{display:block;opacity:1;}
+    .step-wrap{max-width:520px;margin:0 auto;padding:24px 20px;}
+    .step-title{font-size:20px;font-weight:800;color:var(--navy);margin-bottom:6px;}
+    .step-sub{font-size:14px;color:var(--text-secondary);margin-bottom:24px;}
 
-    .step-title{font-size:20px;font-weight:800;color:var(--navy);margin-bottom:4px;}
-    .step-sub{font-size:14px;color:var(--text-sec);margin-bottom:20px;line-height:1.5;}
+    /* ── CAROUSEL FORMULE (étape 1) ─────────────── */
+    .car-ctrl{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+    .car-dots{display:flex;gap:7px;}
+    .car-dot{width:8px;height:8px;border-radius:50%;background:var(--border);cursor:pointer;transition:all .2s;}
+    .car-dot.active{width:22px;border-radius:4px;background:var(--cyan);}
+    .car-arrows{display:flex;gap:8px;}
+    .car-arrow{
+      width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
+      background:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+      color:var(--text-secondary);transition:all .2s;-webkit-tap-highlight-color:transparent;
+    }
+    .car-arrow:hover{border-color:var(--cyan);color:var(--cyan);}
+    .car-viewport{overflow:hidden;border-radius:var(--radius);}
+    .car-track{display:flex;transition:transform .3s ease;will-change:transform;}
+    .car-slide{flex:0 0 100%;}
 
-    /* ── FORMULES GRID ───────────────────────────── */
-    .formules-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
+    /* Card formule cliquable */
     .f-card{
       background:var(--bg-card);border:2px solid var(--border);
-      border-radius:var(--radius);padding:14px 12px;cursor:pointer;
-      transition:all .2s;position:relative;overflow:hidden;
-      -webkit-tap-highlight-color:transparent;
+      border-radius:var(--radius);padding:22px 18px;box-shadow:var(--shadow);
+      cursor:pointer;transition:all .2s;position:relative;overflow:hidden;
     }
-    .f-card:hover{border-color:rgba(0,170,255,.4);box-shadow:var(--shadow);}
-    .f-card.selected{
-      border-color:var(--cyan);background:#F0F9FF;
-      box-shadow:0 0 0 3px rgba(0,170,255,.15);
-    }
-    .f-card.selected::after{
-      content:'✓';position:absolute;top:8px;right:10px;
-      color:var(--cyan);font-size:14px;font-weight:800;
-    }
-    .fc-badge{
-      position:absolute;top:0;left:0;
-      font-size:9px;font-weight:800;padding:3px 8px;
-      border-radius:0 0 8px 0;text-transform:uppercase;
-    }
-    .fc-badge.pop{background:var(--cyan);color:#fff;}
-    .fc-badge.prem{background:var(--gold);color:#fff;}
-    .fc-emoji{font-size:22px;margin-bottom:6px;display:block;}
-    .fc-nom{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;line-height:1.2;}
-    .fc-prix{font-size:20px;font-weight:800;color:var(--cyan);}
-    .fc-duree{font-size:10px;color:var(--text-sec);margin-bottom:6px;}
-    .fc-desc{font-size:10px;color:var(--text-sec);line-height:1.5;}
+    .f-card:hover{border-color:rgba(0,170,255,.4);}
+    .f-card.selected{border-color:var(--cyan);background:#F0F9FF;}
+    .f-badge{position:absolute;top:0;right:0;font-size:10px;font-weight:700;padding:5px 14px;border-radius:0 var(--radius) 0 10px;text-transform:uppercase;letter-spacing:.5px;}
+    .f-badge.pop{background:var(--cyan);color:#fff;}
+    .f-badge.prem{background:#F59E0B;color:#fff;}
+    .f-emoji{font-size:30px;margin-bottom:10px;display:block;}
+    .f-name{font-size:17px;font-weight:800;color:var(--navy);margin-bottom:6px;}
+    .f-price{font-size:38px;font-weight:800;color:var(--navy);line-height:1;}
+    .f-price sup{font-size:20px;vertical-align:top;margin-top:5px;}
+    .f-dur{font-size:13px;color:var(--text-secondary);margin:6px 0 12px;}
+    .f-desc{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:12px;}
+    .f-incl{background:#EFFDF9;border:1px solid #A7F3D0;border-radius:8px;padding:8px 12px;font-size:12px;color:#047857;font-weight:600;}
+    .f-select-indicator{display:none;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--cyan);margin-top:12px;}
+    .f-card.selected .f-select-indicator{display:flex;}
 
-    /* ── SUPPLÉMENTS ÉTAPE 1 ─────────────────────── */
-    .supps-section-title{
-      font-size:14px;font-weight:700;color:var(--navy);
-      margin-bottom:10px;padding-top:4px;
-    }
-    .supps-list{display:flex;flex-direction:column;gap:8px;}
+    /* ── SUPPLÉMENTS (étape 1) ──────────────────── */
+    .supps-wrap{margin-top:24px;}
+    .supps-title{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:14px;}
     .supp-toggle{
-      background:var(--bg-card);border:1.5px solid var(--border);
-      border-radius:var(--radius-sm);padding:14px;cursor:pointer;
-      display:flex;align-items:center;gap:12px;transition:all .2s;
-      -webkit-tap-highlight-color:transparent;
+      background:var(--bg-card);border:2px solid var(--border);
+      border-radius:var(--radius);padding:16px;margin-bottom:10px;
+      display:flex;align-items:flex-start;gap:12px;cursor:pointer;
+      transition:all .2s;
     }
-    .supp-toggle:hover{border-color:rgba(0,170,255,.4);}
+    .supp-toggle:hover{border-color:rgba(0,170,255,.3);}
     .supp-toggle.selected{border-color:var(--cyan);background:#F0F9FF;}
-    .supp-toggle.disabled{opacity:.4;cursor:not-allowed;pointer-events:none;}
-    .supp-chk{
+    .supp-toggle.disabled{opacity:.45;cursor:not-allowed;pointer-events:none;}
+    .supp-check{
       width:22px;height:22px;border-radius:6px;border:2px solid var(--border);
-      flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;
+      flex-shrink:0;display:flex;align-items:center;justify-content:center;
+      font-size:13px;transition:all .2s;margin-top:1px;
     }
-    .supp-toggle.selected .supp-chk{background:var(--cyan);border-color:var(--cyan);}
-    .supp-toggle.selected .supp-chk::after{content:'✓';color:#fff;font-size:12px;font-weight:800;}
+    .supp-toggle.selected .supp-check{background:var(--cyan);border-color:var(--cyan);color:#fff;}
     .supp-body{flex:1;}
-    .supp-name{font-size:13px;font-weight:700;color:var(--navy);}
-    .supp-detail{font-size:11px;color:var(--text-sec);line-height:1.4;}
-    .supp-inclu{font-size:11px;color:var(--success);font-weight:600;}
-    .supp-price{font-size:15px;font-weight:800;color:var(--cyan);flex-shrink:0;}
+    .supp-top2{display:flex;justify-content:space-between;align-items:flex-start;}
+    .supp-name{font-size:14px;font-weight:700;color:var(--navy);}
+    .supp-pricetag{font-size:16px;font-weight:800;color:var(--cyan);}
+    .supp-dur{font-size:12px;color:var(--text-secondary);}
+    .supp-desc{font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:4px;}
+    .supp-note-wax{font-size:11px;color:var(--text-secondary);margin-top:4px;}
+    .supp-incl-badge{background:#EFFDF9;border-radius:6px;padding:4px 10px;font-size:11px;color:#047857;font-weight:600;margin-top:8px;display:inline-block;}
 
-    /* ── CALENDRIER ──────────────────────────────── */
-    .cal-card{
-      background:var(--bg-card);border:1px solid var(--border);
-      border-radius:var(--radius);overflow:hidden;margin-bottom:20px;
-      box-shadow:var(--shadow);
+    /* ── CALENDRIER (étape 2) ───────────────────── */
+    .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+    .cal-nav-btn{
+      width:38px;height:38px;border-radius:50%;border:1.5px solid var(--border);
+      background:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+      color:var(--text-secondary);transition:all .2s;
     }
-    .cal-header{
-      display:flex;align-items:center;justify-content:space-between;
-      padding:14px 16px;border-bottom:1px solid var(--border);
-    }
-    .cal-title{font-size:15px;font-weight:800;color:var(--navy);}
-    .cal-nav{
-      width:34px;height:34px;border-radius:8px;
-      border:1.5px solid var(--border);background:#fff;
-      font-size:16px;cursor:pointer;color:var(--text-sec);
-      display:flex;align-items:center;justify-content:center;transition:all .2s;
-    }
-    .cal-nav:hover{border-color:var(--cyan);color:var(--cyan);}
-    .cal-body{padding:12px;}
-    .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px;}
-    .cal-wday{text-align:center;font-size:11px;font-weight:700;color:var(--text-sec);padding:4px 0;}
-    .cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+    .cal-nav-btn:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan);}
+    .cal-nav-btn:disabled{opacity:.4;cursor:not-allowed;}
+    .cal-month{font-size:16px;font-weight:700;color:var(--navy);text-transform:capitalize;}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:24px;}
+    .cal-head{font-size:11px;font-weight:700;color:var(--text-secondary);text-align:center;padding:6px 2px;}
+    .cal-head.we{color:var(--disabled);}
     .cal-day{
-      aspect-ratio:1;display:flex;align-items:center;justify-content:center;
-      font-size:13px;font-weight:500;border-radius:8px;cursor:pointer;
+      aspect-ratio:1;border-radius:10px;border:none;background:none;
+      font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
       transition:all .2s;-webkit-tap-highlight-color:transparent;
     }
-    .cal-day.empty,.cal-day.disabled{color:rgba(74,96,128,.3);cursor:not-allowed;}
-    .cal-day.weekend{color:rgba(74,96,128,.25);cursor:not-allowed;}
-    .cal-day.available:hover{background:rgba(0,170,255,.12);color:var(--cyan);}
-    .cal-day.selected{background:var(--cyan);color:#fff;font-weight:700;box-shadow:0 2px 8px rgba(0,170,255,.35);}
-    .cal-day.today{border:1.5px solid var(--cyan);color:var(--cyan);}
-    .cal-day.today.selected{color:#fff;}
+    .cal-day.empty{cursor:default;}
+    .cal-day.available{background:#fff;color:var(--text-primary);border:1.5px solid var(--border);}
+    .cal-day.available:hover{border-color:var(--cyan);color:var(--cyan);background:#F0F9FF;}
+    .cal-day.selected{background:var(--cyan);color:#fff;border:none;}
+    .cal-day.past,.cal-day.weekend{background:none;color:var(--disabled);cursor:not-allowed;}
+    .cal-day.full{background:#FEF2F2;color:#FCA5A5;cursor:not-allowed;text-decoration:line-through;}
+    .cal-day.today-past{background:none;color:var(--disabled);cursor:not-allowed;}
 
-    /* ── CRÉNEAUX ────────────────────────────────── */
-    .creneaux-wrap{margin-bottom:20px;}
-    .creneaux-title{font-size:13px;font-weight:700;color:var(--text-sec);margin-bottom:10px;}
+    /* ── CRÉNEAUX (étape 2) ─────────────────────── */
+    .creneaux-section{display:none;}
+    .creneaux-date{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:16px;}
+    .creneaux-group{margin-bottom:20px;}
+    .creneaux-label{font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+    .creneaux-label.complet{color:var(--disabled);}
     .creneaux-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
-    .cr-btn{
-      padding:11px 4px;border-radius:var(--radius-sm);
-      border:1.5px solid var(--border);background:#fff;
-      font-family:'Plus Jakarta Sans',sans-serif;
-      font-size:13px;font-weight:600;color:var(--text);
-      cursor:pointer;text-align:center;transition:all .2s;
-      -webkit-tap-highlight-color:transparent;
+    .creneau-btn{
+      padding:10px 4px;border-radius:10px;border:1.5px solid var(--border);
+      background:#fff;font-family:inherit;font-size:13px;font-weight:600;
+      color:var(--text-primary);cursor:pointer;text-align:center;
+      transition:all .2s;-webkit-tap-highlight-color:transparent;
     }
-    .cr-btn:hover:not(.taken){border-color:var(--cyan);color:var(--cyan);}
-    .cr-btn.selected{background:var(--cyan);border-color:var(--cyan);color:#fff;}
-    .cr-btn.taken{color:rgba(74,96,128,.35);cursor:not-allowed;font-size:11px;text-decoration:line-through;}
-    .cr-loading{text-align:center;color:var(--text-sec);font-size:13px;padding:16px 0;}
+    .creneau-btn:hover:not(.taken):not(.selected){border-color:var(--cyan);color:var(--cyan);}
+    .creneau-btn.selected{background:var(--cyan);border-color:var(--cyan);color:#fff;}
+    .creneau-btn.taken{background:#F8FAFF;color:var(--disabled);cursor:not-allowed;font-size:11px;}
+    .loading-creneaux{text-align:center;color:var(--text-secondary);font-size:14px;padding:20px;}
 
-    /* ── FORMULAIRE CLIENT ───────────────────────── */
-    .recap-card{
-      background:#F0F9FF;border:1px solid rgba(0,170,255,.25);
-      border-radius:var(--radius);padding:14px 16px;margin-bottom:20px;
-    }
-    .recap-card h3{font-size:12px;font-weight:700;color:var(--text-sec);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
-    .recap-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,170,255,.1);}
-    .recap-row:last-child{border-bottom:none;padding-top:8px;}
-    .recap-row .rk{font-size:12px;color:var(--text-sec);}
-    .recap-row .rv{font-size:13px;font-weight:600;color:var(--navy);text-align:right;max-width:220px;}
-    .recap-row.total .rv{font-size:20px;font-weight:800;color:var(--cyan);}
-    .form-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-    .field{margin-bottom:14px;}
-    .field label{display:block;font-size:13px;font-weight:600;color:var(--text-sec);margin-bottom:5px;}
-    .field label .req{color:var(--cyan);margin-left:2px;}
-    .field input{
-      width:100%;background:#fff;
-      border:1.5px solid var(--border);border-radius:var(--radius-sm);
-      padding:12px 13px;color:var(--navy);
-      font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;
-      outline:none;transition:border-color .2s,box-shadow .2s;
-      -webkit-appearance:none;
-    }
-    .field input::placeholder{color:rgba(74,96,128,.4);}
-    .field input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,170,255,.12);}
-    .addr-row1{display:grid;grid-template-columns:1fr 80px;gap:10px;}
-    .addr-row2{display:grid;grid-template-columns:90px 1fr;gap:10px;}
-    .check-label{
-      display:flex;align-items:flex-start;gap:12px;
-      background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-sm);
-      padding:14px;cursor:pointer;transition:border-color .2s;
-    }
-    .check-label.checked{border-color:var(--cyan);}
-    .check-box{
-      width:22px;height:22px;border-radius:6px;border:2px solid var(--border);
-      flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;
-    }
-    .check-label.checked .check-box{background:var(--cyan);border-color:var(--cyan);}
-    .check-label.checked .check-box::after{content:'✓';color:#fff;font-size:13px;font-weight:700;}
-    .check-txt{font-size:13px;color:var(--text-sec);line-height:1.5;}
-    .error-msg{
-      background:#FEF2F2;border:1px solid #FECACA;border-radius:var(--radius-sm);
-      padding:12px 14px;font-size:13px;color:#B91C1C;margin-top:12px;display:none;
-    }
+    /* ── FORMULAIRE (étape 3) ───────────────────── */
+    .recap-mini{background:var(--bg-card);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:24px;}
+    .recap-mini h4{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px;}
+    .recap-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid var(--border);}
+    .recap-row:last-child{border-bottom:none;font-weight:700;}
+    .recap-row span:first-child{color:var(--text-secondary);}
+    .recap-row span:last-child{color:var(--text-primary);}
+    .recap-total span:last-child{color:var(--cyan);font-size:16px;}
 
-    /* ── CONFIRMATION ────────────────────────────── */
-    #step-4{text-align:center;padding-top:16px;}
-    .confirm-icon{
-      width:80px;height:80px;
-      background:linear-gradient(135deg,var(--cyan),var(--success));
-      border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
-      font-size:34px;margin-bottom:20px;
-      box-shadow:0 6px 24px rgba(0,170,255,.3);
-      animation:popIn .5s cubic-bezier(.175,.885,.32,1.275);
+    .form-group{margin-bottom:16px;}
+    .form-label{display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px;}
+    .form-label span{color:var(--error);}
+    .form-input{
+      width:100%;padding:12px 14px;border:1.5px solid var(--border);
+      border-radius:var(--radius);font-family:inherit;font-size:15px;
+      color:var(--text-primary);background:#fff;outline:none;transition:border-color .2s;
     }
-    @keyframes popIn{from{transform:scale(0);opacity:0;}to{transform:scale(1);opacity:1;}}
-    #step-4 h2{font-size:24px;font-weight:800;color:var(--navy);margin-bottom:8px;}
-    #step-4 .confirm-sub{font-size:14px;color:var(--text-sec);line-height:1.6;margin-bottom:24px;}
-    .confirm-recap{
-      background:#fff;border:1px solid var(--border);
-      border-radius:var(--radius);padding:20px;text-align:left;margin-bottom:24px;
-      box-shadow:var(--shadow);
+    .form-input:focus{border-color:var(--cyan);}
+    .form-input::placeholder{color:var(--disabled);}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .form-input.error{border-color:var(--error);}
+    .form-hint{font-size:12px;color:var(--text-secondary);margin-top:4px;}
+
+    .erreur-box{background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;color:#991B1B;line-height:1.6;display:none;}
+
+    /* ── CONFIRMATION (étape 4) ─────────────────── */
+    .confirm-wrap{text-align:center;padding:40px 20px;}
+    .checkmark{
+      width:80px;height:80px;border-radius:50%;background:var(--success);
+      display:flex;align-items:center;justify-content:center;margin:0 auto 24px;
+      font-size:36px;animation:pop .4s ease;
     }
+    @keyframes pop{0%{transform:scale(0)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+    .confirm-title{font-size:24px;font-weight:800;color:var(--navy);margin-bottom:8px;}
+    .confirm-sub{font-size:15px;color:var(--text-secondary);margin-bottom:28px;}
+    .confirm-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:20px;text-align:left;margin-bottom:24px;}
+    .confirm-card h4{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:12px;}
+    .confirm-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);}
+    .confirm-row:last-child{border-bottom:none;font-weight:700;}
+    .confirm-row span:first-child{color:var(--text-secondary);}
+    .confirm-total span:last-child{color:var(--cyan);font-size:16px;}
     .btn-nouvelle{
-      background:none;border:2px solid var(--border);
-      border-radius:var(--radius);padding:12px 28px;
-      font-family:'Plus Jakarta Sans',sans-serif;
-      font-size:14px;font-weight:600;color:var(--text-sec);cursor:pointer;transition:all .2s;
+      background:linear-gradient(135deg,var(--navy),var(--cyan));
+      color:#fff;border:none;border-radius:50px;
+      padding:14px 32px;font-family:inherit;font-size:15px;font-weight:700;
+      cursor:pointer;transition:opacity .2s;
     }
-    .btn-nouvelle:hover{border-color:var(--cyan);color:var(--cyan);}
+    .btn-nouvelle:hover{opacity:.88;}
 
-    /* ── STICKY FOOTER ───────────────────────────── */
+    /* ── STICKY FOOTER ──────────────────────────── */
     .sticky-footer{
       position:fixed;bottom:0;left:0;right:0;
       background:#fff;border-top:1px solid var(--border);
-      padding:12px 16px;z-index:50;
-      box-shadow:0 -4px 20px rgba(13,27,62,.08);
+      padding:12px 20px;display:flex;align-items:center;justify-content:space-between;
+      z-index:50;box-shadow:0 -4px 20px rgba(13,27,62,.06);
     }
-    .sf-inner{max-width:480px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;}
-    .sf-total{white-space:nowrap;}
-    .sf-total small{font-size:11px;color:var(--text-sec);display:block;}
-    .sf-total span{font-size:22px;font-weight:800;color:var(--cyan);}
-    .sf-btns{display:flex;gap:8px;flex:1;justify-content:flex-end;}
-    .btn-back{
-      padding:12px 16px;border-radius:var(--radius-sm);
-      background:none;border:1.5px solid var(--border);
-      color:var(--text-sec);font-family:'Plus Jakarta Sans',sans-serif;
-      font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;
-    }
-    .btn-back:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan);}
-    .btn-back:disabled{opacity:.3;cursor:not-allowed;}
+    .sticky-price-wrap{display:flex;flex-direction:column;}
+    .sticky-label{font-size:11px;color:var(--text-secondary);}
+    .sticky-price{font-size:22px;font-weight:800;color:var(--navy);}
+    .sticky-price span{font-size:16px;}
     .btn-next{
-      flex:1;padding:12px 16px;border-radius:var(--radius-sm);
-      background:linear-gradient(135deg,var(--navy),#1a3a7a);
-      border:none;color:#fff;
-      font-family:'Plus Jakarta Sans',sans-serif;
-      font-size:15px;font-weight:700;cursor:pointer;
-      transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;
+      background:linear-gradient(135deg,var(--navy),var(--cyan));
+      color:#fff;border:none;border-radius:50px;
+      padding:13px 28px;font-family:inherit;font-size:15px;font-weight:700;
+      cursor:pointer;transition:all .2s;min-height:48px;
     }
-    .btn-next:hover:not(:disabled){background:linear-gradient(135deg,#1a3a7a,var(--cyan));}
-    .btn-next:disabled{opacity:.35;cursor:not-allowed;}
-    .btn-next .sp{
-      width:16px;height:16px;border:2px solid rgba(255,255,255,.3);
-      border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none;
+    .btn-next:disabled{background:var(--disabled);cursor:not-allowed;}
+    .btn-next:not(:disabled):hover{opacity:.88;}
+    .btn-back{
+      background:none;border:1.5px solid var(--border);border-radius:50px;
+      padding:12px 20px;font-family:inherit;font-size:14px;font-weight:600;
+      color:var(--text-secondary);cursor:pointer;min-height:48px;
+      transition:all .2s;
     }
-    .btn-next.loading .sp{display:block;}
-    .btn-next.loading .lbl{display:none;}
-    @keyframes spin{to{transform:rotate(360deg);}}
-
-    @media(min-width:480px){
-      .res-main{padding:24px 24px 140px;}
-      .creneaux-grid{grid-template-columns:repeat(4,1fr);}
-    }
+    .btn-back:hover{border-color:var(--cyan);color:var(--cyan);}
   </style>
 </head>
 <body>
 
-<!-- ── HEADER ────────────────────────────────────────────── -->
+<!-- HEADER -->
 <header class="res-header">
-  <a href="/" class="back-link">← Accueil</a>
-  <span class="res-header-title">Réservation</span>
-  <div class="res-logo">
-    <img src="/logo.png" alt="" onerror="this.style.display='none'">
-    <span class="res-logo-txt">Auto<span>Clean</span></span>
+  <a href="/" class="back-link">← Retour</a>
+  <div class="header-logo">
+    <img src="/logo.png" alt="AutoClean" onerror="this.style.display='none'">
+    <span>Réservation</span>
   </div>
 </header>
 
-<!-- ── PROGRESS ──────────────────────────────────────────── -->
-<div class="progress-wrap">
-  <nav class="progress" id="progress">
-    <div class="ps active" data-s="1"><div class="ps-num">1</div><div class="ps-lbl">Formule</div></div>
-    <div class="ps" data-s="2"><div class="ps-num">2</div><div class="ps-lbl">Créneau</div></div>
-    <div class="ps" data-s="3"><div class="ps-num">3</div><div class="ps-lbl">Vos infos</div></div>
-    <div class="ps" data-s="4"><div class="ps-num">4</div><div class="ps-lbl">Confirmation</div></div>
-  </nav>
+<!-- BARRE DE PROGRESSION -->
+<div class="progress-bar">
+  <div class="steps">
+    <div class="step-item">
+      <div class="step-circle active" id="sc1">1</div>
+      <div class="step-label active" id="sl1">Formule</div>
+    </div>
+    <div class="step-line" id="line1"></div>
+    <div class="step-item">
+      <div class="step-circle" id="sc2">2</div>
+      <div class="step-label" id="sl2">Date &amp; Heure</div>
+    </div>
+    <div class="step-line" id="line2"></div>
+    <div class="step-item">
+      <div class="step-circle" id="sc3">3</div>
+      <div class="step-label" id="sl3">Vos infos</div>
+    </div>
+    <div class="step-line" id="line3"></div>
+    <div class="step-item">
+      <div class="step-circle" id="sc4">4</div>
+      <div class="step-label" id="sl4">Confirmation</div>
+    </div>
+  </div>
 </div>
 
-<!-- ── MAIN ──────────────────────────────────────────────── -->
-<main class="res-main">
-
-  <!-- ÉTAPE 1 : Formule + Suppléments -->
-  <div class="step active" id="step-1">
+<!-- ÉTAPE 1 — Formule + Suppléments -->
+<div class="step-content active" id="step1">
+  <div class="step-wrap">
     <h2 class="step-title">Choisissez votre formule</h2>
-    <p class="step-sub">Sélectionnez la prestation souhaitée.</p>
-    <div class="formules-grid" id="formules-grid"></div>
-    <div class="supps-section-title">Options supplémentaires</div>
-    <div class="supps-list" id="supps-list"></div>
-  </div>
+    <p class="step-sub">Cliquez sur une formule pour la sélectionner</p>
 
-  <!-- ÉTAPE 2 : Date & heure -->
-  <div class="step" id="step-2">
-    <h2 class="step-title">Choisissez un créneau</h2>
-    <p class="step-sub">Sélectionnez une date et un horaire disponibles.</p>
-    <div class="cal-card">
-      <div class="cal-header">
-        <button class="cal-nav" id="cal-prev">‹</button>
-        <span class="cal-title" id="cal-title">—</span>
-        <button class="cal-nav" id="cal-next">›</button>
+    <div class="car-ctrl">
+      <div class="car-dots" id="car-dots"></div>
+      <div class="car-arrows">
+        <button class="car-arrow" id="car-prev" aria-label="Précédent">‹</button>
+        <button class="car-arrow" id="car-next" aria-label="Suivant">›</button>
       </div>
-      <div class="cal-body">
-        <div class="cal-weekdays">
-          <div class="cal-wday">L</div><div class="cal-wday">M</div><div class="cal-wday">M</div>
-          <div class="cal-wday">J</div><div class="cal-wday">V</div>
-          <div class="cal-wday" style="color:rgba(74,96,128,.3)">S</div>
-          <div class="cal-wday" style="color:rgba(74,96,128,.3)">D</div>
+    </div>
+    <div class="car-viewport">
+      <div class="car-track" id="car-track"></div>
+    </div>
+
+    <div class="supps-wrap" id="supps-wrap" style="display:none;">
+      <div class="supps-title">Ajouter des options</div>
+      <div id="supps-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ÉTAPE 2 — Calendrier + Créneaux -->
+<div class="step-content" id="step2">
+  <div class="step-wrap">
+    <h2 class="step-title">Choisissez votre date</h2>
+    <p class="step-sub">Sélectionnez un jour disponible puis un créneau</p>
+
+    <div class="cal-nav">
+      <button class="cal-nav-btn" id="cal-prev" aria-label="Mois précédent">‹</button>
+      <span class="cal-month" id="cal-month-label"></span>
+      <button class="cal-nav-btn" id="cal-next" aria-label="Mois suivant">›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+
+    <div class="creneaux-section" id="creneaux-section">
+      <div class="creneaux-date" id="creneaux-date-label"></div>
+      <div class="loading-creneaux" id="creneaux-loading">Chargement des créneaux...</div>
+      <div id="creneaux-content" style="display:none;">
+        <div class="creneaux-group">
+          <div class="creneaux-label" id="label-matin">🌅 Matin</div>
+          <div class="creneaux-grid" id="creneaux-matin"></div>
         </div>
-        <div class="cal-days" id="cal-days"></div>
+        <div class="creneaux-group">
+          <div class="creneaux-label" id="label-apres">☀️ Après-midi</div>
+          <div class="creneaux-grid" id="creneaux-apres"></div>
+        </div>
       </div>
     </div>
-    <div class="creneaux-wrap" id="creneaux-wrap" style="display:none;">
-      <p class="creneaux-title" id="creneaux-title">Créneaux disponibles</p>
-      <div class="creneaux-grid" id="creneaux-grid"></div>
-    </div>
   </div>
+</div>
 
-  <!-- ÉTAPE 3 : Infos client -->
-  <div class="step" id="step-3">
+<!-- ÉTAPE 3 — Informations client -->
+<div class="step-content" id="step3">
+  <div class="step-wrap">
     <h2 class="step-title">Vos informations</h2>
-    <p class="step-sub">Nous vous enverrons une confirmation par SMS et email.</p>
-    <div class="recap-card" id="recap3"></div>
-    <div class="form-grid2">
-      <div class="field"><label>Prénom <span class="req">*</span></label><input id="f-prenom" type="text" placeholder="Marie" autocomplete="given-name"/></div>
-      <div class="field"><label>Nom <span class="req">*</span></label><input id="f-nom" type="text" placeholder="Dupont" autocomplete="family-name"/></div>
-    </div>
-    <div class="field"><label>Téléphone <span class="req">*</span></label><input id="f-tel" type="tel" placeholder="04xx xx xx xx ou +32 4xx xx xx xx" autocomplete="tel" inputmode="tel"/></div>
-    <div class="field"><label>Email <span class="req">*</span></label><input id="f-email" type="email" placeholder="marie@email.com" autocomplete="email" inputmode="email"/></div>
-    <div class="field">
-      <label>Adresse <span class="req">*</span></label>
-      <div class="addr-row1" style="margin-bottom:8px;">
-        <input id="f-rue" type="text" placeholder="Rue des Lilas" autocomplete="street-address"/>
-        <input id="f-num" type="text" placeholder="N° 12"/>
+    <p class="step-sub">Tous les champs marqués * sont obligatoires</p>
+
+    <div class="recap-mini" id="recap-step3"></div>
+
+    <div class="erreur-box" id="erreur-box"></div>
+
+    <form id="client-form" onsubmit="return false;">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="prenom">Prénom <span>*</span></label>
+          <input class="form-input" type="text" id="prenom" name="prenom" autocomplete="given-name" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="nom">Nom <span>*</span></label>
+          <input class="form-input" type="text" id="nom" name="nom" autocomplete="family-name" required>
+        </div>
       </div>
-      <div class="addr-row2">
-        <input id="f-cp" type="text" placeholder="7800" inputmode="numeric" maxlength="4" autocomplete="postal-code"/>
-        <input id="f-ville" type="text" placeholder="Ath" autocomplete="address-level2"/>
+      <div class="form-group">
+        <label class="form-label" for="telephone">Téléphone <span>*</span></label>
+        <input class="form-input" type="tel" id="telephone" name="telephone" placeholder="04xx xx xx xx ou +32 4xx" autocomplete="tel" required>
       </div>
-    </div>
-    <label class="check-label" id="fonce-label">
-      <div class="check-box" id="fonce-box"></div>
-      <span class="check-txt">🖤 Mon véhicule est de couleur noire ou foncée<br><small style="color:rgba(74,96,128,.6)">Info utile pour l'application black wax</small></span>
-    </label>
-    <div class="error-msg" id="form-err"></div>
+      <div class="form-group">
+        <label class="form-label" for="email">Email <span>*</span></label>
+        <input class="form-input" type="email" id="email" name="email" placeholder="votre@email.com" autocomplete="email" required>
+        <div class="form-hint">La confirmation de réservation sera envoyée ici</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="adresse">Adresse <span>*</span></label>
+        <input class="form-input" type="text" id="adresse" name="adresse" placeholder="Rue, numéro" autocomplete="street-address" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="codePostal">Code postal <span>*</span></label>
+          <input class="form-input" type="text" id="codePostal" name="codePostal" placeholder="7800" maxlength="4" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="ville">Ville <span>*</span></label>
+          <input class="form-input" type="text" id="ville" name="ville" placeholder="Ath" autocomplete="address-level2" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="commentaire">Commentaire <span style="font-weight:400;color:var(--text-secondary)">(optionnel)</span></label>
+        <input class="form-input" type="text" id="commentaire" name="commentaire" placeholder="Ex: voiture noire, portail code 1234...">
+      </div>
+    </form>
   </div>
+</div>
 
-  <!-- ÉTAPE 4 : Confirmation -->
-  <div class="step" id="step-4">
-    <div class="confirm-icon">✓</div>
-    <h2>Réservation confirmée !</h2>
-    <p class="confirm-sub">Vous recevrez une confirmation<br>par SMS et email dans quelques minutes.</p>
-    <div class="confirm-recap" id="confirm-recap"></div>
-    <button class="btn-nouvelle" onclick="location.href='/reservation'">Faire une nouvelle réservation</button>
-  </div>
-
-</main>
-
-<!-- ── STICKY FOOTER ─────────────────────────────────────── -->
-<footer class="sticky-footer" id="sticky-footer">
-  <div class="sf-inner">
-    <div class="sf-total">
-      <small>Total estimé</small>
-      <span id="footer-prix">0€</span>
+<!-- ÉTAPE 4 — Confirmation -->
+<div class="step-content" id="step4">
+  <div class="confirm-wrap">
+    <div class="checkmark">✓</div>
+    <div class="confirm-title">Réservation confirmée !</div>
+    <div class="confirm-sub" id="confirm-email-msg">Un email de confirmation vous a été envoyé.</div>
+    <div class="confirm-card">
+      <h4>Récapitulatif</h4>
+      <div id="confirm-recap"></div>
     </div>
-    <div class="sf-btns">
-      <button class="btn-back" id="btn-back" onclick="prevStep()" disabled>← Retour</button>
-      <button class="btn-next" id="btn-next" onclick="nextStep()" disabled>
-        <div class="sp"></div><span class="lbl">Suivant →</span>
-      </button>
-    </div>
+    <button class="btn-nouvelle" onclick="window.location.href='/reservation'">Nouvelle réservation</button>
   </div>
-</footer>
+</div>
+
+<!-- STICKY FOOTER -->
+<div class="sticky-footer" id="sticky-footer">
+  <div class="sticky-price-wrap">
+    <div class="sticky-label">Total estimé</div>
+    <div class="sticky-price"><span id="sticky-price">0</span>€</div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <button class="btn-back" id="btn-back" style="display:none;" onclick="goBack()">← Retour</button>
+    <button class="btn-next" id="btn-next" disabled onclick="goNext()">Suivant →</button>
+  </div>
+</div>
 
 <script>
-// ────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
 // STATE
-// ────────────────────────────────────────────────────────
-let CFG = null;
-let S = {
-  step: 1,
-  formuleId: null,
-  supplements: new Set(),
-  dateStr: null,
-  heure: null,
-  fonce: false,
-  calYear: new Date().getFullYear(),
-  calMonth: new Date().getMonth(),
-  creneaux: { disponibles: [], reserves: [] }
+// ═══════════════════════════════════════════════════════════════════════════════
+const state = {
+  cfg:           null,
+  step:          1,
+  formuleId:     null,
+  supplements:   new Set(),
+  date:          null,   // 'YYYY-MM-DD'
+  heure:         null,
+  carIdx:        0,
+  touchX:        0,
+  viewYear:      new Date().getFullYear(),
+  viewMonth:     new Date().getMonth() + 1, // 1-12
+  dispoMois:     {},     // keyed by 'YYYY-MM-DD'
+  reservation:   null    // résultat confirmation
 };
 
-// ────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
 // HELPERS
-// ────────────────────────────────────────────────────────
-const getF = () => CFG?.FORMULES.find(f => f.id === S.formuleId);
+// ═══════════════════════════════════════════════════════════════════════════════
+const MOIS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const JOURS_FR_LONG = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+
+function padZ(n){ return String(n).padStart(2,'0'); }
+
+function formatDateLong(str) {
+  const d = new Date(str + 'T12:00:00');
+  return `${JOURS_FR_LONG[d.getDay()]} ${d.getDate()} ${MOIS_FR[d.getMonth()]} ${d.getFullYear()}`;
+}
+
 function getPrix() {
-  const f = getF(); if (!f) return 0;
-  let t = f.prix;
-  S.supplements.forEach(id => { const s = CFG.SUPPLEMENTS.find(x => x.id === id); if (s) t += s.prix; });
-  return t;
-}
-function pad(n) { return String(n).padStart(2,'0'); }
-function toStr(d) { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
-function isOuvre(d) { return CFG.JOURS_OUVRES.includes(d.getDay()); }
-const MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-const JOURS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
-const MOIS_C = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-function dateLisible(s) {
-  const d = new Date(s + 'T12:00:00');
-  return `${JOURS[d.getDay()]} ${d.getDate()} ${MOIS_C[d.getMonth()]}`;
+  if (!state.cfg || !state.formuleId) return 0;
+  const f = state.cfg.FORMULES.find(x => x.id === state.formuleId);
+  let p = f.prix;
+  for (const id of state.supplements) {
+    const s = state.cfg.SUPPLEMENTS.find(x => x.id === id);
+    if (s && !s.incompatible_avec.includes(state.formuleId)) p += s.prix;
+  }
+  return p;
 }
 
-// ────────────────────────────────────────────────────────
-// UI UPDATES
-// ────────────────────────────────────────────────────────
-function updatePrix() { document.getElementById('footer-prix').textContent = getPrix() + '€'; }
-
-function updateProgress() {
-  document.querySelectorAll('.ps').forEach(el => {
-    const n = +el.dataset.s;
-    el.classList.remove('active','done');
-    if (n === S.step) el.classList.add('active');
-    else if (n < S.step) el.classList.add('done');
-  });
+function updateStickyPrice() {
+  document.getElementById('sticky-price').textContent = getPrix();
 }
 
-function updateNav() {
-  const back = document.getElementById('btn-back');
-  const next = document.getElementById('btn-next');
-  const lbl  = next.querySelector('.lbl');
-  back.disabled = S.step === 1;
-  lbl.textContent = S.step === 3 ? 'Confirmer ✓' : 'Suivant →';
-  next.style.background = S.step === 3
-    ? 'linear-gradient(135deg,#00AAFF,#00D4AA)'
-    : 'linear-gradient(135deg,#0D1B3E,#1a3a7a)';
-  switch(S.step) {
-    case 1: next.disabled = !S.formuleId; break;
-    case 2: next.disabled = !(S.dateStr && S.heure); break;
-    case 3: next.disabled = false; break;
-    default: next.disabled = true;
+// ═══════════════════════════════════════════════════════════════════════════════
+// NAVIGATION ÉTAPES
+// ═══════════════════════════════════════════════════════════════════════════════
+function goTo(n) {
+  // Cacher l'ancienne
+  const old = document.getElementById('step' + state.step);
+  old.style.opacity = '0';
+  setTimeout(() => {
+    old.classList.remove('active');
+    state.step = n;
+    const cur = document.getElementById('step' + n);
+    cur.classList.add('active');
+    setTimeout(() => { cur.style.opacity = '1'; }, 10);
+    updateProgress();
+    updateStickyPrice();
+    document.getElementById('btn-back').style.display = n > 1 && n < 4 ? 'block' : 'none';
+    document.getElementById('sticky-footer').style.display = n === 4 ? 'none' : 'flex';
+    if (n === 2) initStep2();
+    if (n === 3) renderRecapStep3();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, 200);
+}
+
+function goNext() {
+  if (state.step === 1) {
+    if (!state.formuleId) return;
+    goTo(2);
+  } else if (state.step === 2) {
+    if (!state.date || !state.heure) return;
+    goTo(3);
+  } else if (state.step === 3) {
+    soumettre();
   }
 }
 
-function setLoading(v) {
+function goBack() {
+  if (state.step > 1) goTo(state.step - 1);
+}
+
+function updateProgress() {
+  for (let i = 1; i <= 4; i++) {
+    const c = document.getElementById('sc' + i);
+    const l = document.getElementById('sl' + i);
+    c.classList.remove('active','done');
+    l.classList.remove('active','done');
+    if (i < state.step) { c.classList.add('done'); l.classList.add('done'); c.textContent = '✓'; }
+    else if (i === state.step) { c.classList.add('active'); l.classList.add('active'); c.textContent = i; }
+    else { c.textContent = i; }
+    if (i < 4) {
+      const line = document.getElementById('line' + i);
+      line.classList.toggle('done', i < state.step);
+    }
+  }
+  // Bouton next
   const btn = document.getElementById('btn-next');
-  btn.disabled = v;
-  btn.classList.toggle('loading', v);
+  if (state.step === 1) {
+    btn.textContent = 'Suivant →'; btn.disabled = !state.formuleId;
+  } else if (state.step === 2) {
+    btn.textContent = 'Suivant →'; btn.disabled = !state.date || !state.heure;
+  } else if (state.step === 3) {
+    btn.textContent = 'Confirmer la réservation →'; btn.disabled = false;
+  }
 }
 
-function showErr(msg) {
-  const el = document.getElementById('form-err');
-  el.textContent = msg; el.style.display = msg ? 'block' : 'none';
-}
+// ═══════════════════════════════════════════════════════════════════════════════
+// ÉTAPE 1 — CAROUSEL + SUPPLÉMENTS
+// ═══════════════════════════════════════════════════════════════════════════════
+function initStep1(cfg) {
+  const track   = document.getElementById('car-track');
+  const dotsEl  = document.getElementById('car-dots');
 
-// ────────────────────────────────────────────────────────
-// NAVIGATION
-// ────────────────────────────────────────────────────────
-function goTo(n) {
-  document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
-  document.getElementById(`step-${n}`).classList.add('active');
-  S.step = n;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  updateProgress();
-  updateNav();
-  document.getElementById('sticky-footer').style.display = n === 4 ? 'none' : '';
-  if (n === 3) renderRecap();
-}
-
-function nextStep() { if (S.step === 3) { submit(); return; } goTo(S.step + 1); }
-function prevStep() { if (S.step > 1) goTo(S.step - 1); }
-
-// ────────────────────────────────────────────────────────
-// ÉTAPE 1 — Formules & Suppléments
-// ────────────────────────────────────────────────────────
-function renderFormules() {
-  const g = document.getElementById('formules-grid');
-  g.innerHTML = CFG.FORMULES.map(f => `
-    <div class="f-card${S.formuleId===f.id?' selected':''}" onclick="selectF('${f.id}')">
-      ${f.badge ? `<span class="fc-badge ${f.badge==='Populaire'?'pop':'prem'}">${f.badge}</span>` : ''}
-      <span class="fc-emoji">${f.emoji}</span>
-      <div class="fc-nom">${f.nom}</div>
-      <div class="fc-prix">${f.prix}€</div>
-      <div class="fc-duree">⏱ ${f.duree}</div>
-      <div class="fc-desc">${f.description.substring(0,80)}...</div>
-    </div>`).join('');
-}
-
-function renderSupps() {
-  const showroom = S.formuleId === 'showroom';
-  const g = document.getElementById('supps-list');
-  g.innerHTML = CFG.SUPPLEMENTS.map(s => {
-    const isIncompat = s.incompatible_avec.includes(S.formuleId);
-    const isSel = S.supplements.has(s.id);
-    return `
-    <div class="supp-toggle${isSel?' selected':''}${isIncompat?' disabled':''}" onclick="${isIncompat?'':'toggleSupp(\''+s.id+'\')'}">
-      <div class="supp-chk"></div>
-      <div class="supp-body">
-        <div class="supp-name">${s.emoji} ${s.nom}</div>
-        <div class="supp-detail">${s.description}</div>
-        ${isIncompat ? '<div class="supp-inclu">✅ Déjà inclus dans la Formule Showroom</div>' : ''}
+  function buildCard(f) {
+    const badge = f.badge ? `<span class="f-badge ${f.badge==='Populaire'?'pop':'prem'}">${f.badge}</span>` : '';
+    const incl  = f.inclut_supplements ? `<div class="f-incl">✅ Extraction eau &amp; Cire déjà incluses</div>` : '';
+    return `<div class="car-slide">
+      <div class="f-card" data-id="${f.id}" onclick="selectFormule('${f.id}')">
+        ${badge}
+        <span class="f-emoji">${f.emoji}</span>
+        <div class="f-name">${f.nom}</div>
+        <div class="f-price"><sup>€</sup>${f.prix}</div>
+        <div class="f-dur">⏱ ${f.duree}</div>
+        <div class="f-desc">${f.description}</div>
+        ${incl}
+        <div class="f-select-indicator">✓ Sélectionnée</div>
       </div>
-      <div class="supp-price">${isIncompat ? '' : '+'+s.prix+'€'}</div>
     </div>`;
-  }).join('');
+  }
+
+  track.innerHTML = cfg.FORMULES.map(buildCard).join('');
+  dotsEl.innerHTML = cfg.FORMULES.map((_,i) =>
+    `<div class="car-dot${i===0?' active':''}" data-i="${i}"></div>`).join('');
+
+  dotsEl.querySelectorAll('.car-dot').forEach(d =>
+    d.addEventListener('click', () => carGoTo(+d.dataset.i)));
+
+  document.getElementById('car-prev').onclick = () => carGoTo(state.carIdx - 1);
+  document.getElementById('car-next').onclick = () => carGoTo(state.carIdx + 1);
+
+  track.addEventListener('touchstart', e => { state.touchX = e.touches[0].clientX; }, { passive: true });
+  track.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - state.touchX;
+    if (Math.abs(dx) > 40) carGoTo(dx < 0 ? state.carIdx + 1 : state.carIdx - 1);
+  });
+
+  document.addEventListener('keydown', e => {
+    if (state.step !== 1) return;
+    if (e.key === 'ArrowLeft')  carGoTo(state.carIdx - 1);
+    if (e.key === 'ArrowRight') carGoTo(state.carIdx + 1);
+  });
+
+  // Suppléments
+  const suppsList = document.getElementById('supps-list');
+  suppsList.innerHTML = cfg.SUPPLEMENTS.map(s => `
+    <div class="supp-toggle" id="supp-${s.id}" data-id="${s.id}" onclick="toggleSupp('${s.id}')">
+      <div class="supp-check" id="supp-check-${s.id}"></div>
+      <div class="supp-body">
+        <div class="supp-top2">
+          <span class="supp-name">${s.emoji} ${s.nom}</span>
+          <div style="text-align:right">
+            <div class="supp-pricetag">+${s.prix}€</div>
+            <div class="supp-dur">+${s.duree_extra}</div>
+          </div>
+        </div>
+        <div class="supp-desc">${s.description}</div>
+        ${s.note ? `<div class="supp-note-wax">${s.note}</div>` : ''}
+      </div>
+    </div>`).join('');
+
+  // Pré-sélection via URL
+  const urlParam = new URLSearchParams(window.location.search).get('formule');
+  if (urlParam) {
+    const idx = cfg.FORMULES.findIndex(f => f.id === urlParam);
+    if (idx >= 0) {
+      carGoTo(idx);
+      selectFormule(urlParam);
+    }
+  }
 }
 
-function selectF(id) {
-  S.formuleId = id;
-  S.supplements.clear();
-  updatePrix(); renderFormules(); renderSupps(); updateNav();
+function carGoTo(i) {
+  const count = state.cfg.FORMULES.length;
+  state.carIdx = ((i % count) + count) % count;
+  document.getElementById('car-track').style.transform = `translateX(-${state.carIdx * 100}%)`;
+  document.querySelectorAll('#car-dots .car-dot').forEach((d, j) =>
+    d.classList.toggle('active', j === state.carIdx));
+}
+
+function selectFormule(id) {
+  state.formuleId = id;
+  document.querySelectorAll('.f-card').forEach(c =>
+    c.classList.toggle('selected', c.dataset.id === id));
+
+  // Afficher suppléments
+  const f = state.cfg.FORMULES.find(x => x.id === id);
+  document.getElementById('supps-wrap').style.display = 'block';
+
+  // Gérer incompatibilités
+  state.cfg.SUPPLEMENTS.forEach(s => {
+    const el = document.getElementById('supp-' + s.id);
+    if (f.inclut_supplements) {
+      el.classList.add('disabled');
+      el.innerHTML = el.innerHTML.replace('</div>', '') ; // keep as is
+      // Ajouter badge "inclus" si pas encore
+      if (!el.querySelector('.supp-incl-badge')) {
+        el.querySelector('.supp-body').insertAdjacentHTML('beforeend', '<span class="supp-incl-badge">✅ Déjà inclus dans cette formule</span>');
+      }
+      el.classList.remove('selected');
+      state.supplements.delete(s.id);
+    } else {
+      el.classList.remove('disabled');
+      const b = el.querySelector('.supp-incl-badge');
+      if (b) b.remove();
+    }
+  });
+
+  updateStickyPrice();
+  updateProgress();
 }
 
 function toggleSupp(id) {
-  if (S.supplements.has(id)) S.supplements.delete(id);
-  else S.supplements.add(id);
-  updatePrix(); renderSupps();
+  if (!state.formuleId) return;
+  const f = state.cfg.FORMULES.find(x => x.id === state.formuleId);
+  if (f.inclut_supplements) return;
+  const s = state.cfg.SUPPLEMENTS.find(x => x.id === id);
+  if (s.incompatible_avec.includes(state.formuleId)) return;
+
+  const el = document.getElementById('supp-' + id);
+  if (state.supplements.has(id)) {
+    state.supplements.delete(id);
+    el.classList.remove('selected');
+    document.getElementById('supp-check-' + id).textContent = '';
+  } else {
+    state.supplements.add(id);
+    el.classList.add('selected');
+    document.getElementById('supp-check-' + id).textContent = '✓';
+  }
+  updateStickyPrice();
 }
 
-// ────────────────────────────────────────────────────────
-// ÉTAPE 2 — Calendrier
-// ────────────────────────────────────────────────────────
-function renderCal() {
-  const { calYear: y, calMonth: m } = S;
-  document.getElementById('cal-title').textContent = `${MOIS[m]} ${y}`;
-  const today  = new Date(); today.setHours(0,0,0,0);
-  const maxD   = new Date(today); maxD.setDate(today.getDate() + CFG.JOURS_MAX_A_L_AVANCE);
-  const first  = new Date(y, m, 1);
-  let offset   = first.getDay() - 1; if (offset < 0) offset = 6;
-  const days   = new Date(y, m+1, 0).getDate();
-  const cont   = document.getElementById('cal-days');
-  cont.innerHTML = '';
+// ═══════════════════════════════════════════════════════════════════════════════
+// ÉTAPE 2 — CALENDRIER
+// ═══════════════════════════════════════════════════════════════════════════════
+async function initStep2() {
+  await chargerDispoMois();
+  renderCalendar();
+  document.getElementById('cal-prev').onclick = () => changerMois(-1);
+  document.getElementById('cal-next').onclick = () => changerMois(1);
+}
+
+async function chargerDispoMois() {
+  const moisStr = `${state.viewYear}-${padZ(state.viewMonth)}`;
+  try {
+    const r = await fetch(`/api/disponibilites-mois?mois=${moisStr}`);
+    const d = await r.json();
+    state.dispoMois = { ...state.dispoMois, ...d };
+  } catch { /* utiliser cache vide */ }
+}
+
+async function changerMois(dir) {
+  state.viewMonth += dir;
+  if (state.viewMonth > 12) { state.viewMonth = 1; state.viewYear++; }
+  if (state.viewMonth < 1)  { state.viewMonth = 12; state.viewYear--; }
+  await chargerDispoMois();
+  renderCalendar();
+  // Effacer sélection créneau si on change de mois
+  document.getElementById('creneaux-section').style.display = 'none';
+  state.heure = null;
+  updateProgress();
+}
+
+function renderCalendar() {
+  const year  = state.viewYear;
+  const month = state.viewMonth; // 1-12
+
+  document.getElementById('cal-month-label').textContent =
+    `${MOIS_FR[month-1]} ${year}`;
+
+  // Griser les mois passés
+  const today = new Date(); today.setHours(0,0,0,0);
+  const nowY  = today.getFullYear(), nowM = today.getMonth() + 1;
+  document.getElementById('cal-prev').disabled = (year < nowY) || (year === nowY && month <= nowM);
+
+  // Griser les mois trop loin dans le futur (+ 2 mois)
+  const maxDate = new Date(today); maxDate.setDate(maxDate.getDate() + state.cfg.JOURS_MAX_A_L_AVANCE);
+  const maxY = maxDate.getFullYear(), maxM = maxDate.getMonth() + 1;
+  document.getElementById('cal-next').disabled = (year > maxY) || (year === maxY && month >= maxM);
+
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const firstDay    = new Date(year, month - 1, 1).getDay(); // 0=dim
+  const offset      = (firstDay + 6) % 7; // lundi = 0
+
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  // Headers
+  ['Lu','Ma','Me','Je','Ve','Sa','Di'].forEach((h, i) => {
+    const d = document.createElement('div');
+    d.className = 'cal-head' + (i >= 5 ? ' we' : '');
+    d.textContent = h;
+    grid.appendChild(d);
+  });
+
+  // Cellules vides
   for (let i = 0; i < offset; i++) {
-    const el = document.createElement('div'); el.className = 'cal-day empty'; cont.appendChild(el);
+    const d = document.createElement('button');
+    d.className = 'cal-day empty'; d.disabled = true;
+    grid.appendChild(d);
   }
-  for (let d = 1; d <= days; d++) {
-    const dt  = new Date(y, m, d); const ds = toStr(dt);
-    const el  = document.createElement('div'); el.textContent = d; el.className = 'cal-day';
-    const isTd  = dt.getTime() === today.getTime();
-    const isFut = dt > today && dt <= maxD;
-    const isWE  = dt.getDay() === 0 || dt.getDay() === 6;
-    if (isTd) el.classList.add('today');
-    if (isFut && !isWE && isOuvre(dt)) {
-      el.classList.add('available');
-      if (S.dateStr === ds) el.classList.add('selected');
-      el.addEventListener('click', () => selectDate(ds));
-    } else { el.classList.add(isWE ? 'weekend' : 'disabled'); }
-    cont.appendChild(el);
+
+  // Jours
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${padZ(month)}-${padZ(day)}`;
+    const btn     = document.createElement('button');
+    btn.textContent = day;
+    btn.className   = 'cal-day';
+    btn.type        = 'button';
+
+    const d      = new Date(year, month - 1, day);
+    const dowJS  = d.getDay(); // 0=dim
+    const isWE   = dowJS === 0 || dowJS === 6;
+    const isPast = d <= today;
+    const isFar  = d > maxDate;
+    const dispo  = state.dispoMois[dateStr];
+    const isFull = dispo && dispo.jour_complet;
+
+    if (isWE || isPast || isFar) {
+      btn.className += ' ' + (isWE ? 'weekend' : 'today-past');
+      btn.disabled = true;
+    } else if (isFull) {
+      btn.className += ' full';
+      btn.title = 'Journée complète';
+      btn.disabled = true;
+    } else {
+      btn.className += state.date === dateStr ? ' selected' : ' available';
+      btn.onclick = () => selectDate(dateStr);
+    }
+    grid.appendChild(btn);
   }
 }
 
-async function selectDate(ds) {
-  S.dateStr = ds; S.heure = null;
-  renderCal(); updateNav();
-  const w = document.getElementById('creneaux-wrap');
-  const g = document.getElementById('creneaux-grid');
-  const t = document.getElementById('creneaux-title');
-  w.style.display = 'block';
-  g.innerHTML = '<div class="cr-loading">Chargement...</div>';
-  t.textContent = `Créneaux — ${dateLisible(ds)}`;
+async function selectDate(dateStr) {
+  state.date  = dateStr;
+  state.heure = null;
+  updateProgress();
+
+  // Mettre à jour highlight calendrier
+  document.querySelectorAll('.cal-day.available, .cal-day.selected').forEach(b => {
+    const txt = b.textContent;
+    const d   = +txt;
+    if (!d) return;
+    const ds = `${state.viewYear}-${padZ(state.viewMonth)}-${padZ(d)}`;
+    b.className = b.className.replace(' selected',' available');
+    if (ds === dateStr) b.className = b.className.replace(' available',' selected');
+  });
+
+  // Charger créneaux
+  const section = document.getElementById('creneaux-section');
+  section.style.display = 'block';
+  document.getElementById('creneaux-loading').style.display = 'block';
+  document.getElementById('creneaux-content').style.display  = 'none';
+  document.getElementById('creneaux-date-label').textContent = formatDateLong(dateStr);
+
   try {
-    const r = await fetch(`/api/creneaux?date=${ds}`);
-    S.creneaux = await r.json();
-    renderCreneaux();
-  } catch { g.innerHTML = '<div class="cr-loading">Erreur de chargement.</div>'; }
+    const r    = await fetch(`/api/creneaux?date=${dateStr}`);
+    const data = await r.json();
+    renderCreneaux(data);
+  } catch {
+    renderCreneaux({ creneaux_pris: [], matin_complet: false, apres_midi_complet: false });
+  }
 }
 
-function renderCreneaux() {
-  const g = document.getElementById('creneaux-grid');
-  g.innerHTML = CFG.CRENEAUX.map(h => {
-    const taken = S.creneaux.reserves?.includes(h);
-    const sel   = S.heure === h;
-    return `<button class="cr-btn${taken?' taken':''}${sel?' selected':''}" ${taken?'disabled':''} onclick="${taken?'':'selectH(\''+h+'\')'}">${taken?'Complet':h}</button>`;
-  }).join('');
+function renderCreneaux(data) {
+  document.getElementById('creneaux-loading').style.display = 'none';
+  document.getElementById('creneaux-content').style.display  = 'block';
+
+  const { creneaux_pris, matin_complet, apres_midi_complet } = data;
+
+  // Matin
+  const lm = document.getElementById('label-matin');
+  lm.textContent = matin_complet ? '🌅 Matin (complet)' : '🌅 Matin';
+  lm.className   = 'creneaux-label' + (matin_complet ? ' complet' : '');
+  document.getElementById('creneaux-matin').innerHTML =
+    state.cfg.CRENEAUX.matin.map(h => creneauBtn(h, creneaux_pris)).join('');
+
+  // Après-midi
+  const la = document.getElementById('label-apres');
+  la.textContent = apres_midi_complet ? '☀️ Après-midi (complet)' : '☀️ Après-midi';
+  la.className   = 'creneaux-label' + (apres_midi_complet ? ' complet' : '');
+  document.getElementById('creneaux-apres').innerHTML =
+    state.cfg.CRENEAUX.apres_midi.map(h => creneauBtn(h, creneaux_pris)).join('');
+
+  section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-function selectH(h) { S.heure = h; renderCreneaux(); updateNav(); }
-
-document.getElementById('cal-prev').onclick = () => {
-  S.calMonth--; if (S.calMonth < 0) { S.calMonth = 11; S.calYear--; } renderCal();
-};
-document.getElementById('cal-next').onclick = () => {
-  S.calMonth++; if (S.calMonth > 11) { S.calMonth = 0; S.calYear++; } renderCal();
-};
-
-// ────────────────────────────────────────────────────────
-// ÉTAPE 3 — Récap & formulaire
-// ────────────────────────────────────────────────────────
-function renderRecap() {
-  const f     = getF();
-  const supps = Array.from(S.supplements).map(id => CFG.SUPPLEMENTS.find(s=>s.id===id)?.nom).filter(Boolean);
-  document.getElementById('recap3').innerHTML = `
-    <h3>Récapitulatif</h3>
-    <div class="recap-row"><span class="rk">📅 Date & heure</span><span class="rv">${dateLisible(S.dateStr)} à ${S.heure}</span></div>
-    <div class="recap-row"><span class="rk">🚗 Formule</span><span class="rv">${f?.emoji} ${f?.nom}</span></div>
-    ${supps.length ? `<div class="recap-row"><span class="rk">➕ Options</span><span class="rv">${supps.join(', ')}</span></div>` : ''}
-    <div class="recap-row total"><span class="rk">💶 Total</span><span class="rv">${getPrix()}€</span></div>`;
+function creneauBtn(heure, pris) {
+  const taken = pris.includes(heure);
+  const sel   = state.heure === heure;
+  const cls   = taken ? 'taken' : (sel ? 'selected' : '');
+  const label = taken ? 'Complet' : heure;
+  const click = taken ? '' : `onclick="selectCreneau('${heure}')"`;
+  return `<button class="creneau-btn ${cls}" ${click} type="button">${label}</button>`;
 }
 
-// Checkbox véhicule foncé
-document.getElementById('fonce-label').onclick = () => {
-  S.fonce = !S.fonce;
-  const box = document.getElementById('fonce-box');
-  const lbl = document.getElementById('fonce-label');
-  lbl.classList.toggle('checked', S.fonce);
-  box.style.background    = S.fonce ? 'var(--cyan)' : '';
-  box.style.borderColor   = S.fonce ? 'var(--cyan)' : '';
-  box.textContent         = S.fonce ? '✓' : '';
-  box.style.color         = '#fff';
-};
-
-document.getElementById('f-cp').addEventListener('input', e => {
-  e.target.value = e.target.value.replace(/\D/g,'').slice(0,4);
-});
-
-// ────────────────────────────────────────────────────────
-// SOUMISSION
-// ────────────────────────────────────────────────────────
-function valTel(t) { return /^(\+32|0)[0-9]{8,9}$/.test(t.replace(/[\s.\-()]/g,'')); }
-function valEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
-
-async function submit() {
-  showErr('');
-  const prenom = document.getElementById('f-prenom').value.trim();
-  const nom    = document.getElementById('f-nom').value.trim();
-  const tel    = document.getElementById('f-tel').value.trim();
-  const email  = document.getElementById('f-email').value.trim();
-  const rue    = document.getElementById('f-rue').value.trim();
-  const num    = document.getElementById('f-num').value.trim();
-  const cp     = document.getElementById('f-cp').value.trim();
-  const ville  = document.getElementById('f-ville').value.trim();
-
-  if (!prenom || prenom.length < 2) return showErr('Veuillez saisir votre prénom.');
-  if (!nom    || nom.length < 2)    return showErr('Veuillez saisir votre nom.');
-  if (!valTel(tel))                 return showErr('Téléphone belge invalide. Ex : 0470 12 34 56');
-  if (!valEmail(email))             return showErr('Adresse email invalide.');
-  if (!rue || !cp || !ville)        return showErr('Veuillez remplir votre adresse complète.');
-  if (!/^\d{4}$/.test(cp))         return showErr('Code postal belge invalide (4 chiffres).');
-
-  setLoading(true);
-  try {
-    const res = await fetch('/api/reservation', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prenom, nom, telephone: tel, email,
-        adresse: [rue, num].filter(Boolean).join(' '),
-        codePostal: cp, ville,
-        formuleId: S.formuleId,
-        supplements: Array.from(S.supplements),
-        dateRdv: S.dateStr, heureRdv: S.heure,
-        vehiculeFonce: S.fonce
-      })
+function selectCreneau(heure) {
+  state.heure = heure;
+  // Rafraîchir
+  ['creneaux-matin','creneaux-apres'].forEach(id => {
+    document.getElementById(id).querySelectorAll('.creneau-btn:not(.taken)').forEach(b => {
+      b.classList.toggle('selected', b.textContent === heure);
     });
-    const data = await res.json();
-    if (data.succes) {
-      renderConfirm(data.reservation, prenom, nom, rue, num, cp, ville);
+  });
+  updateProgress();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ÉTAPE 3 — RECAP + FORMULAIRE
+// ═══════════════════════════════════════════════════════════════════════════════
+function renderRecapStep3() {
+  const f    = state.cfg.FORMULES.find(x => x.id === state.formuleId);
+  const supps = [...state.supplements]
+    .map(id => state.cfg.SUPPLEMENTS.find(s => s.id === id))
+    .filter(Boolean);
+
+  const rows = [
+    ['Formule', f.nom],
+    ['Suppléments', supps.length ? supps.map(s => s.nom).join(', ') : '—'],
+    ['Date', formatDateLong(state.date)],
+    ['Heure', state.heure],
+  ];
+
+  document.getElementById('recap-step3').innerHTML = `
+    <h4>Votre réservation</h4>
+    ${rows.map(([k,v]) => `<div class="recap-row"><span>${k}</span><span>${v}</span></div>`).join('')}
+    <div class="recap-row recap-total"><span>Total</span><span>${getPrix()}€</span></div>`;
+
+  document.getElementById('btn-next').textContent = 'Confirmer la réservation →';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SOUMISSION
+// ═══════════════════════════════════════════════════════════════════════════════
+async function soumettre() {
+  const btn = document.getElementById('btn-next');
+  btn.disabled = true;
+  btn.textContent = 'Envoi en cours...';
+
+  const body = {
+    prenom:      document.getElementById('prenom').value.trim(),
+    nom:         document.getElementById('nom').value.trim(),
+    telephone:   document.getElementById('telephone').value.trim(),
+    email:       document.getElementById('email').value.trim(),
+    adresse:     document.getElementById('adresse').value.trim(),
+    codePostal:  document.getElementById('codePostal').value.trim(),
+    ville:       document.getElementById('ville').value.trim(),
+    commentaire: document.getElementById('commentaire').value.trim(),
+    formuleId:   state.formuleId,
+    supplements: [...state.supplements],
+    dateRdv:     state.date,
+    heureRdv:    state.heure
+  };
+
+  try {
+    const r   = await fetch('/api/reservation', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const res = await r.json();
+
+    if (res.succes) {
+      state.reservation = res.reservation;
+      renderConfirmation(res.reservation);
       goTo(4);
     } else {
-      showErr(Array.isArray(data.erreurs) ? data.erreurs.join(' ') : 'Une erreur est survenue.');
+      afficherErreurs(res.erreurs || ['Une erreur est survenue.']);
+      btn.disabled = false;
+      btn.textContent = 'Confirmer la réservation →';
     }
-  } catch { showErr('Impossible de contacter le serveur. Vérifiez votre connexion.'); }
-  finally { setLoading(false); }
-}
-
-function renderConfirm(r, prenom, nom, rue, num, cp, ville) {
-  const f     = getF();
-  const supps = Array.from(S.supplements).map(id => CFG.SUPPLEMENTS.find(s=>s.id===id)?.nom).filter(Boolean);
-  const supStr = supps.length ? supps.join(', ') : 'Aucun';
-  document.getElementById('confirm-recap').innerHTML = `
-    <div class="recap-row"><span class="rk">👤 Client</span><span class="rv">${prenom} ${nom}</span></div>
-    <div class="recap-row"><span class="rk">📅 Date & heure</span><span class="rv">${dateLisible(S.dateStr)} à ${S.heure}</span></div>
-    <div class="recap-row"><span class="rk">🚗 Formule</span><span class="rv">${f?.emoji} ${f?.nom}</span></div>
-    <div class="recap-row"><span class="rk">➕ Options</span><span class="rv">${supStr}</span></div>
-    <div class="recap-row"><span class="rk">📍 Adresse</span><span class="rv">${[rue,num,cp,ville].filter(Boolean).join(', ')}</span></div>
-    <div class="recap-row total"><span class="rk">💶 Total</span><span class="rv">${getPrix()}€</span></div>`;
-}
-
-// ────────────────────────────────────────────────────────
-// URL PARAM ?formule=ID
-// ────────────────────────────────────────────────────────
-function checkUrlParam() {
-  const p = new URLSearchParams(window.location.search).get('formule');
-  if (p && CFG.FORMULES.find(f => f.id === p)) selectF(p);
-}
-
-// ────────────────────────────────────────────────────────
-// INIT
-// ────────────────────────────────────────────────────────
-async function init() {
-  try {
-    const r = await fetch('/api/config');
-    CFG = await r.json();
-    renderFormules();
-    renderSupps();
-    renderCal();
-    updatePrix();
-    updateNav();
-    checkUrlParam();
-  } catch(e) {
-    document.getElementById('formules-grid').innerHTML = '<p style="color:var(--error);padding:16px;grid-column:1/-1;">Erreur de chargement. Rechargez la page.</p>';
+  } catch {
+    afficherErreurs(["Problème de connexion. Veuillez réessayer."]);
+    btn.disabled = false;
+    btn.textContent = 'Confirmer la réservation →';
   }
 }
-init();
+
+function afficherErreurs(erreurs) {
+  const box = document.getElementById('erreur-box');
+  box.style.display = 'block';
+  box.innerHTML = erreurs.map(e => `• ${e}`).join('<br>');
+  box.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONFIRMATION
+// ═══════════════════════════════════════════════════════════════════════════════
+function renderConfirmation(r) {
+  const supps = r.supplements.length ? r.supplements.join(', ') : '—';
+  document.getElementById('confirm-email-msg').textContent =
+    `Un email de confirmation vous a été envoyé à ${r.email}`;
+
+  const rows = [
+    ['Formule',     r.formule],
+    ['Suppléments', supps],
+    ['Date',        formatDateLong(r.dateRdv)],
+    ['Heure',       r.heureRdv],
+    ['Adresse',     `${r.adresse}, ${r.codePostal} ${r.ville}`],
+  ];
+  if (r.commentaire) rows.push(['Commentaire', r.commentaire]);
+
+  document.getElementById('confirm-recap').innerHTML =
+    rows.map(([k,v]) => `<div class="confirm-row"><span>${k}</span><span>${v}</span></div>`).join('') +
+    `<div class="confirm-row confirm-total"><span>Total payé</span><span>${r.prixTotal}€</span></div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════════════════
+fetch('/api/config').then(r => r.json()).then(cfg => {
+  state.cfg = cfg;
+  initStep1(cfg);
+  updateProgress();
+});
 </script>
 </body>
 </html>

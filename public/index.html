@@ -2,447 +2,340 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>AutoClean — Lavage voiture à domicile</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <style>
-    :root {
-      --bg-page:    #FFFFFF;
-      --bg-surface: #F4F8FF;
-      --bg-card:    #FFFFFF;
-      --navy:       #0D1B3E;
-      --cyan:       #00AAFF;
-      --cyan-light: #33BBFF;
-      --text:       #0D1B3E;
-      --text-sec:   #4A6080;
-      --border:     #E0ECFF;
-      --success:    #00D4AA;
-      --error:      #FF4757;
-      --gold:       #F59E0B;
-      --radius:     14px;
-      --radius-sm:  10px;
-      --shadow:     0 2px 16px rgba(13,27,62,.08);
-      --shadow-lg:  0 8px 40px rgba(13,27,62,.12);
+    :root{
+      --bg-page:#FFFFFF; --bg-surface:#F4F8FF; --bg-card:#FFFFFF;
+      --navy:#0D1B3E; --cyan:#00AAFF; --cyan-light:#33BBFF;
+      --text-primary:#0D1B3E; --text-secondary:#4A6080;
+      --border:#E0ECFF; --success:#00D4AA; --error:#FF4757; --disabled:#C0CDD8;
+      --radius:14px; --shadow:0 2px 16px rgba(13,27,62,.08);
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
     html{scroll-behavior:smooth;}
-    body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg-page);color:var(--text);-webkit-font-smoothing:antialiased;}
+    body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg-page);color:var(--text-primary);-webkit-font-smoothing:antialiased;}
 
-    /* ── HEADER ────────────────────────────────────── */
+    /* ── HEADER ─────────────────────────────────── */
     .header{
       position:sticky;top:0;z-index:100;
-      background:rgba(255,255,255,0.95);
-      backdrop-filter:blur(12px);
+      background:rgba(255,255,255,.96);backdrop-filter:blur(12px);
       border-bottom:1px solid var(--border);
-      padding:14px 20px;
-      display:flex;align-items:center;justify-content:space-between;
+      padding:12px 20px;display:flex;align-items:center;justify-content:space-between;
     }
     .logo{display:flex;align-items:center;gap:10px;}
     .logo img{height:36px;object-fit:contain;}
-    .logo-txt{font-size:18px;font-weight:800;color:var(--navy);letter-spacing:-.3px;}
-    .logo-txt span{color:var(--cyan);}
+    .logo-name{font-size:17px;font-weight:800;color:var(--navy);}
     .btn-header{
-      background:linear-gradient(135deg,var(--navy),#1a3a7a);
-      color:#fff;border:none;border-radius:8px;
-      padding:10px 18px;font-family:'Plus Jakarta Sans',sans-serif;
-      font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;
-      text-decoration:none;display:inline-block;
+      background:linear-gradient(135deg,var(--navy),var(--cyan));
+      color:#fff;border:none;border-radius:50px;
+      padding:10px 20px;font-family:inherit;font-size:13px;font-weight:700;
+      cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;min-height:44px;
+      transition:opacity .2s;
     }
-    .btn-header:hover{background:linear-gradient(135deg,#1a3a7a,var(--cyan));box-shadow:0 4px 14px rgba(0,170,255,.3);}
+    .btn-header:hover{opacity:.88;}
 
-    /* ── HERO ──────────────────────────────────────── */
-    .hero{
-      padding:60px 20px 52px;text-align:center;
-      background:linear-gradient(180deg,var(--bg-surface) 0%,var(--bg-page) 100%);
-    }
-    .hero-logo{margin-bottom:24px;}
-    .hero-logo img{height:90px;max-width:240px;object-fit:contain;}
-    .hero-logo .logo-big{font-size:36px;font-weight:800;color:var(--navy);}
-    .hero-logo .logo-big span{color:var(--cyan);}
-    .hero h1{
-      font-size:32px;font-weight:800;line-height:1.15;
-      color:var(--navy);margin-bottom:12px;letter-spacing:-.5px;
-    }
-    .hero-sub{font-size:16px;color:var(--text-sec);margin-bottom:8px;line-height:1.5;}
-    .hero-zone{
-      display:inline-flex;align-items:center;gap:6px;
-      background:var(--bg-surface);border:1px solid var(--border);
-      border-radius:100px;padding:6px 14px;
-      font-size:13px;color:var(--text-sec);margin-bottom:28px;
-    }
-    .hero-btns{display:flex;flex-direction:column;gap:10px;align-items:center;}
+    /* ── HERO ───────────────────────────────────── */
+    .hero{text-align:center;padding:52px 20px 44px;background:linear-gradient(180deg,var(--bg-surface),var(--bg-page));}
+    .hero img{height:90px;max-width:220px;object-fit:contain;margin-bottom:22px;}
+    .hero h1{font-size:clamp(26px,7vw,40px);font-weight:800;color:var(--navy);line-height:1.15;letter-spacing:-.4px;margin-bottom:12px;}
+    .hero-sub{font-size:16px;color:var(--text-secondary);margin-bottom:6px;font-weight:500;}
+    .hero-zone{font-size:13px;color:var(--text-secondary);margin-bottom:28px;}
+    .hero-actions{display:flex;flex-direction:column;gap:10px;align-items:center;}
     .btn-primary{
-      background:linear-gradient(135deg,var(--cyan),#0088CC);
-      color:#fff;border:none;border-radius:var(--radius);
-      padding:15px 32px;font-family:'Plus Jakarta Sans',sans-serif;
-      font-size:16px;font-weight:700;cursor:pointer;
-      box-shadow:0 4px 20px rgba(0,170,255,.35);
-      transition:all .2s;text-decoration:none;display:inline-block;
-      width:100%;max-width:300px;text-align:center;
+      background:linear-gradient(135deg,var(--navy),var(--cyan));
+      color:#fff;border:none;border-radius:50px;
+      padding:15px 32px;font-family:inherit;font-size:16px;font-weight:700;
+      cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;
+      width:100%;max-width:300px;justify-content:center;
+      box-shadow:0 4px 20px rgba(0,170,255,.3);transition:all .2s;
     }
-    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(0,170,255,.45);}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(0,170,255,.4);}
     .btn-secondary{
-      background:none;border:2px solid var(--border);border-radius:var(--radius);
-      padding:13px 32px;font-family:'Plus Jakarta Sans',sans-serif;
-      font-size:15px;font-weight:600;color:var(--text-sec);cursor:pointer;
-      transition:all .2s;width:100%;max-width:300px;text-align:center;
+      background:none;border:2px solid var(--border);border-radius:50px;
+      padding:13px 32px;font-family:inherit;font-size:15px;font-weight:600;color:var(--text-secondary);
+      cursor:pointer;text-decoration:none;width:100%;max-width:300px;
+      text-align:center;transition:all .2s;
     }
     .btn-secondary:hover{border-color:var(--cyan);color:var(--cyan);}
 
-    /* ── ACCROCHE ──────────────────────────────────── */
-    .accroche{background:var(--bg-surface);padding:40px 20px;}
-    .accroche-grid{display:flex;flex-direction:column;gap:16px;max-width:480px;margin:0 auto;}
-    .accroche-item{
-      display:flex;align-items:flex-start;gap:14px;
-      background:var(--bg-card);border:1px solid var(--border);
-      border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);
-    }
-    .accroche-icon{font-size:24px;flex-shrink:0;}
-    .accroche-item h3{font-size:14px;font-weight:700;margin-bottom:3px;color:var(--navy);}
-    .accroche-item p{font-size:13px;color:var(--text-sec);line-height:1.5;}
+    /* ── ARGUMENTS ──────────────────────────────── */
+    .args{background:var(--bg-surface);padding:40px 20px;}
+    .args-grid{display:flex;flex-direction:column;gap:12px;max-width:640px;margin:0 auto;}
+    .arg{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;display:flex;align-items:flex-start;gap:14px;box-shadow:var(--shadow);}
+    .arg-icon{font-size:26px;flex-shrink:0;}
+    .arg h3{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:3px;}
+    .arg p{font-size:13px;color:var(--text-secondary);line-height:1.5;}
 
-    /* ── SECTION LABELS ────────────────────────────── */
-    .section-wrap{padding:48px 20px;max-width:520px;margin:0 auto;}
-    .section-label{font-size:11px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;}
-    .section-title{font-size:26px;font-weight:800;color:var(--navy);margin-bottom:6px;letter-spacing:-.3px;}
-    .section-sub{font-size:14px;color:var(--text-sec);line-height:1.6;margin-bottom:24px;}
+    /* ── SECTION HEADER ─────────────────────────── */
+    .s-header{padding:48px 20px 0;max-width:520px;margin:0 auto;}
+    .s-label{font-size:11px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;}
+    .s-title{font-size:clamp(20px,5vw,28px);font-weight:800;color:var(--navy);margin-bottom:6px;}
+    .s-sub{font-size:14px;color:var(--text-secondary);line-height:1.6;margin-bottom:0;}
 
-    /* ── CAROUSEL FORMULES ─────────────────────────── */
-    .carousel-outer{padding:48px 0;background:var(--bg-page);}
-    .carousel-header{padding:0 20px;max-width:520px;margin:0 auto 20px;}
-    .carousel-nav{display:flex;align-items:center;justify-content:space-between;margin-top:16px;}
-    .car-dots{display:flex;gap:6px;}
-    .car-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:all .2s;cursor:pointer;}
-    .car-dot.active{width:20px;border-radius:4px;background:var(--cyan);}
+    /* ── CAROUSEL ───────────────────────────────── */
+    .carousel-section{padding-bottom:48px;}
+    .carousel-ctrl{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 0;max-width:520px;margin:0 auto;}
+    .car-dots{display:flex;gap:7px;}
+    .car-dot{width:8px;height:8px;border-radius:50%;background:var(--border);cursor:pointer;transition:all .2s;}
+    .car-dot.active{width:22px;border-radius:4px;background:var(--cyan);}
     .car-arrows{display:flex;gap:8px;}
     .car-arrow{
-      width:36px;height:36px;border-radius:50%;
-      border:1.5px solid var(--border);background:var(--bg-card);
-      font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;
-      transition:all .2s;color:var(--text-sec);
+      width:38px;height:38px;border-radius:50%;border:1.5px solid var(--border);
+      background:var(--bg-card);font-size:20px;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;color:var(--text-secondary);
+      transition:all .2s;-webkit-tap-highlight-color:transparent;
     }
     .car-arrow:hover{border-color:var(--cyan);color:var(--cyan);}
-    .carousel{
-      display:flex;overflow-x:auto;
-      scroll-snap-type:x mandatory;
-      -webkit-overflow-scrolling:touch;
-      scrollbar-width:none;
-      gap:16px;
-      padding:8px 20px 20px;
+    .car-viewport{overflow:hidden;margin:20px 20px 0;border-radius:var(--radius);}
+    .car-track{display:flex;transition:transform .3s ease;will-change:transform;}
+    .car-slide{flex:0 0 100%;padding:0;}
+
+    /* ── FORMULE CARD ───────────────────────────── */
+    .f-card{
+      background:var(--bg-card);border:2px solid var(--border);
+      border-radius:var(--radius);padding:24px 20px;box-shadow:var(--shadow);
+      position:relative;overflow:hidden;
     }
-    .carousel::-webkit-scrollbar{display:none;}
-    .car-item{
-      scroll-snap-align:start;flex-shrink:0;
-      width:calc(100vw - 56px);max-width:300px;
-    }
-    .formule-card{
-      background:var(--bg-card);border:1.5px solid var(--border);
-      border-radius:var(--radius);padding:22px 18px;
-      box-shadow:var(--shadow);position:relative;overflow:hidden;
-      height:100%;transition:all .2s;
-    }
-    .formule-card:hover{box-shadow:var(--shadow-lg);border-color:rgba(0,170,255,.3);}
     .f-badge{
-      position:absolute;top:0;right:0;
-      font-size:10px;font-weight:700;padding:5px 12px;
-      border-radius:0 var(--radius) 0 10px;
+      position:absolute;top:0;right:0;font-size:10px;font-weight:700;
+      padding:5px 14px;border-radius:0 var(--radius) 0 10px;
       text-transform:uppercase;letter-spacing:.5px;
     }
     .f-badge.pop{background:var(--cyan);color:#fff;}
-    .f-badge.prem{background:var(--gold);color:#fff;}
-    .f-emoji{font-size:30px;margin-bottom:12px;display:block;}
-    .f-nom{font-size:16px;font-weight:800;color:var(--navy);margin-bottom:8px;}
-    .f-prix-wrap{display:flex;align-items:baseline;gap:4px;margin-bottom:4px;}
-    .f-prix{font-size:32px;font-weight:800;color:var(--cyan);}
-    .f-currency{font-size:16px;font-weight:700;color:var(--cyan);}
-    .f-duree{font-size:12px;color:var(--text-sec);margin-bottom:12px;display:flex;align-items:center;gap:4px;}
-    .f-desc{font-size:12px;color:var(--text-sec);line-height:1.6;margin-bottom:16px;}
-    .f-inclus{
-      background:#F0FDF9;border:1px solid #A7F3D0;
-      border-radius:8px;padding:8px 10px;
-      font-size:12px;color:#047857;font-weight:600;margin-bottom:16px;
+    .f-badge.prem{background:#F59E0B;color:#fff;}
+    .f-emoji{font-size:32px;margin-bottom:12px;display:block;}
+    .f-name{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:8px;}
+    .f-price{font-size:42px;font-weight:800;color:var(--navy);line-height:1;}
+    .f-price sup{font-size:22px;vertical-align:top;margin-top:6px;}
+    .f-dur{font-size:13px;color:var(--text-secondary);margin:6px 0 14px;display:flex;align-items:center;gap:4px;}
+    .f-desc{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:14px;}
+    .f-incl{background:#EFFDF9;border:1px solid #A7F3D0;border-radius:8px;padding:8px 12px;font-size:12px;color:#047857;font-weight:600;margin-bottom:16px;}
+    .btn-card{
+      display:block;width:100%;padding:13px;
+      background:linear-gradient(135deg,var(--navy),var(--cyan));
+      color:#fff;border:none;border-radius:50px;
+      font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;
+      text-align:center;text-decoration:none;transition:opacity .2s;
     }
-    .btn-formule{
-      display:block;width:100%;padding:12px;
-      background:linear-gradient(135deg,var(--navy),#1a3a7a);
-      color:#fff;border:none;border-radius:var(--radius-sm);
-      font-family:'Plus Jakarta Sans',sans-serif;
-      font-size:13px;font-weight:700;cursor:pointer;
-      text-align:center;text-decoration:none;transition:all .2s;
-    }
-    .btn-formule:hover{background:linear-gradient(135deg,#1a3a7a,var(--cyan));}
+    .btn-card:hover{opacity:.88;}
 
-    /* ── SUPPLÉMENTS ───────────────────────────────── */
-    .supps-section{background:var(--bg-surface);}
-    .supps-grid{display:flex;flex-direction:column;gap:12px;}
+    /* ── SUPPLÉMENTS ────────────────────────────── */
+    .supps-section{background:var(--bg-surface);padding-bottom:48px;}
+    .supps-grid{display:flex;flex-direction:column;gap:12px;padding:20px 20px 0;max-width:520px;margin:0 auto;}
     .supp-card{
-      background:var(--bg-card);border:1px solid var(--border);
-      border-radius:var(--radius);padding:18px;
-      display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
-      box-shadow:var(--shadow);
+      background:var(--bg-card);border:1.5px solid var(--border);
+      border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);
     }
-    .supp-emoji{font-size:22px;flex-shrink:0;}
-    .supp-info{flex:1;}
-    .supp-nom{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:4px;}
-    .supp-desc{font-size:12px;color:var(--text-sec);line-height:1.5;}
-    .supp-prix-wrap{text-align:right;flex-shrink:0;}
-    .supp-prix{font-size:18px;font-weight:800;color:var(--cyan);}
-    .supp-duree{font-size:11px;color:var(--text-sec);}
-    .supp-note{font-size:11px;color:var(--gold);margin-top:6px;font-style:italic;}
+    .supp-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px;}
+    .supp-left{display:flex;align-items:center;gap:10px;}
+    .supp-emoji{font-size:24px;}
+    .supp-name{font-size:15px;font-weight:700;color:var(--navy);}
+    .supp-right{text-align:right;flex-shrink:0;}
+    .supp-price{font-size:20px;font-weight:800;color:var(--cyan);}
+    .supp-dur{font-size:12px;color:var(--text-secondary);}
+    .supp-desc{font-size:13px;color:var(--text-secondary);line-height:1.5;}
+    .supp-note{font-size:12px;color:var(--text-secondary);font-style:italic;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);}
+    .supp-note-wax{font-size:12px;color:var(--text-secondary);margin-top:6px;}
 
-    /* ── CTA FINAL ─────────────────────────────────── */
-    .cta-section{
-      background:linear-gradient(135deg,var(--navy) 0%,#1a3a7a 50%,#0066CC 100%);
-      padding:56px 20px;text-align:center;
-    }
-    .cta-section h2{font-size:28px;font-weight:800;color:#fff;margin-bottom:10px;letter-spacing:-.3px;}
-    .cta-section p{font-size:15px;color:rgba(255,255,255,.75);margin-bottom:28px;line-height:1.6;}
+    /* ── CTA ────────────────────────────────────── */
+    .cta{background:linear-gradient(135deg,var(--navy),var(--cyan));padding:56px 20px;text-align:center;}
+    .cta h2{font-size:clamp(22px,5vw,32px);font-weight:800;color:#fff;margin-bottom:10px;}
+    .cta p{font-size:15px;color:rgba(255,255,255,.82);margin-bottom:32px;line-height:1.6;}
     .btn-white{
-      background:#fff;color:var(--navy);border:none;
-      border-radius:var(--radius);padding:15px 36px;
-      font-family:'Plus Jakarta Sans',sans-serif;
-      font-size:16px;font-weight:800;cursor:pointer;
-      box-shadow:0 4px 20px rgba(0,0,0,.2);transition:all .2s;
-      text-decoration:none;display:inline-block;
+      background:#fff;color:var(--navy);border:none;border-radius:50px;
+      padding:16px 36px;font-family:inherit;font-size:16px;font-weight:800;
+      cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;
+      box-shadow:0 4px 20px rgba(0,0,0,.18);transition:all .2s;
     }
-    .btn-white:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(0,0,0,.3);}
+    .btn-white:hover{transform:translateY(-2px);}
 
-    /* ── FOOTER ────────────────────────────────────── */
-    footer{
-      background:var(--navy);padding:36px 20px;text-align:center;
-    }
-    .footer-logo{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;}
-    .footer-logo img{height:32px;object-fit:contain;filter:brightness(0) invert(1);}
-    .footer-logo-txt{font-size:18px;font-weight:800;color:#fff;}
-    .footer-logo-txt span{color:var(--cyan);}
-    .footer-zone{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:8px;}
-    .footer-copy{font-size:12px;color:rgba(255,255,255,.35);}
+    /* ── FOOTER ─────────────────────────────────── */
+    footer{background:var(--navy);padding:36px 20px;text-align:center;}
+    .footer-logo{height:32px;margin-bottom:12px;filter:brightness(0) invert(1);opacity:.9;}
+    .footer-name{font-size:16px;font-weight:700;color:#fff;margin-bottom:4px;}
+    .footer-zone{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:10px;}
+    .footer-copy{font-size:12px;color:rgba(255,255,255,.3);}
 
-    /* ── RESPONSIVE ────────────────────────────────── */
-    @media(min-width:600px){
-      .hero h1{font-size:40px;}
-      .hero-btns{flex-direction:row;justify-content:center;}
+    /* ── RESPONSIVE ─────────────────────────────── */
+    @media(min-width:560px){
+      .hero-actions{flex-direction:row;justify-content:center;}
       .btn-primary,.btn-secondary{width:auto;}
-      .accroche-grid{flex-direction:row;}
-      .car-item{width:calc(50% - 8px);max-width:280px;}
+      .args-grid{flex-direction:row;}
     }
-    @media(max-width:360px){.hero h1{font-size:26px;}}
+    @media(min-width:520px){
+      .car-viewport{margin:20px auto 0;max-width:480px;}
+      .carousel-ctrl,.s-header{max-width:480px;}
+      .supps-grid{max-width:480px;}
+    }
   </style>
 </head>
 <body>
 
-<!-- ── HEADER ──────────────────────────────────────────────── -->
+<!-- HEADER -->
 <header class="header">
   <div class="logo">
     <img src="/logo.png" alt="AutoClean" onerror="this.style.display='none'">
-    <span class="logo-txt">Auto<span>Clean</span></span>
+    <span class="logo-name">AutoClean</span>
   </div>
   <a href="/reservation" class="btn-header">Prendre RDV →</a>
 </header>
 
-<!-- ── HERO ────────────────────────────────────────────────── -->
+<!-- HERO -->
 <section class="hero">
-  <div class="hero-logo">
-    <img src="/logo.png" alt="AutoClean" onerror="this.style.display='none';document.querySelector('.logo-big').style.display='block'">
-    <div class="logo-big" style="display:none;">Auto<span>Clean</span></div>
-  </div>
-  <h1>Une voiture<br>plus que <span style="color:var(--cyan)">Clean</span></h1>
+  <img src="/logo.png" alt="AutoClean" onerror="this.style.display='none'">
+  <h1>Une voiture<br>plus que Clean</h1>
   <p class="hero-sub">Lavage automobile à domicile, au plus proche de chez vous</p>
-  <div class="hero-zone">📍 Ath &amp; Enghien — Hainaut, Belgique</div>
-  <p style="font-size:14px;color:var(--text-sec);margin-bottom:28px;">Nous venons directement chez vous avec tout le matériel professionnel.</p>
-  <div class="hero-btns">
+  <p class="hero-zone">Nous venons directement chez vous avec tout le matériel — Yttre &amp; Enghien, Hainaut</p>
+  <div class="hero-actions">
     <a href="/reservation" class="btn-primary">Prendre rendez-vous →</a>
     <button class="btn-secondary" onclick="document.getElementById('tarifs').scrollIntoView({behavior:'smooth'})">Voir nos formules ↓</button>
   </div>
 </section>
 
-<!-- ── ACCROCHE ─────────────────────────────────────────────── -->
-<div class="accroche">
-  <div class="accroche-grid">
-    <div class="accroche-item">
-      <div class="accroche-icon">📍</div>
-      <div>
-        <h3>Au plus proche de vous</h3>
-        <p>Nous venons directement à votre adresse, sans déplacement de votre part</p>
-      </div>
-    </div>
-    <div class="accroche-item">
-      <div class="accroche-icon">⏱️</div>
-      <div>
-        <h3>Rapide &amp; efficace</h3>
-        <p>De 45 min à 3h selon la formule choisie</p>
-      </div>
-    </div>
-    <div class="accroche-item">
-      <div class="accroche-icon">💧</div>
-      <div>
-        <h3>Produits professionnels</h3>
-        <p>Turtle Wax, cire de protection, extraction eau — qualité showroom</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ── CAROUSEL FORMULES ───────────────────────────────────── -->
-<section class="carousel-outer" id="tarifs">
-  <div class="carousel-header">
-    <p class="section-label">Nos formules</p>
-    <h2 class="section-title">Choisissez votre prestation</h2>
-    <p class="section-sub">Toutes réalisées chez vous, avec du matériel professionnel.</p>
-    <div class="carousel-nav">
-      <div class="car-dots" id="dots"></div>
-      <div class="car-arrows">
-        <button class="car-arrow" id="arr-left" onclick="scrollCar(-1)">‹</button>
-        <button class="car-arrow" id="arr-right" onclick="scrollCar(1)">›</button>
-      </div>
-    </div>
-  </div>
-  <div class="carousel" id="carousel">
-
-    <div class="car-item">
-      <div class="formule-card">
-        <span class="f-emoji">🚗</span>
-        <div class="f-nom">Lavage Extérieur</div>
-        <div class="f-prix-wrap"><span class="f-prix">35</span><span class="f-currency">€</span></div>
-        <div class="f-duree">⏱ 45 min</div>
-        <div class="f-desc">Shampoing carrosserie, nettoyage jantes, gel brillant pneus, traitement plastiques extérieurs, silicone joints portes &amp; coffre</div>
-        <a href="/reservation?formule=exterieur" class="btn-formule">Choisir cette formule →</a>
-      </div>
-    </div>
-
-    <div class="car-item">
-      <div class="formule-card">
-        <span class="f-emoji">🪑</span>
-        <div class="f-nom">Lavage Intérieur</div>
-        <div class="f-prix-wrap"><span class="f-prix">25</span><span class="f-currency">€</span></div>
-        <div class="f-duree">⏱ 45 min</div>
-        <div class="f-desc">Aspiration complète habitacle, nettoyage plastiques intérieurs, vitres intérieures sans traces</div>
-        <a href="/reservation?formule=interieur" class="btn-formule">Choisir cette formule →</a>
-      </div>
-    </div>
-
-    <div class="car-item">
-      <div class="formule-card">
-        <span class="f-badge pop">Populaire</span>
-        <span class="f-emoji">✨</span>
-        <div class="f-nom">Lavage Complet</div>
-        <div class="f-prix-wrap"><span class="f-prix">50</span><span class="f-currency">€</span></div>
-        <div class="f-duree">⏱ 2h</div>
-        <div class="f-desc">Extérieur + Intérieur combinés — le meilleur rapport qualité/prix</div>
-        <a href="/reservation?formule=complet" class="btn-formule">Choisir cette formule →</a>
-      </div>
-    </div>
-
-    <div class="car-item">
-      <div class="formule-card">
-        <span class="f-badge prem">Premium</span>
-        <span class="f-emoji">💎</span>
-        <div class="f-nom">Formule Showroom</div>
-        <div class="f-prix-wrap"><span class="f-prix">95</span><span class="f-currency">€</span></div>
-        <div class="f-duree">⏱ 2h30 – 3h</div>
-        <div class="f-desc">Lavage complet + cire de protection carrosserie, black wax peintures noires, gel brillant pneus, traitement plastiques, silicone joints</div>
-        <div class="f-inclus">✅ Extraction eau &amp; Cire incluses</div>
-        <a href="/reservation?formule=showroom" class="btn-formule">Choisir cette formule →</a>
-      </div>
-    </div>
-
+<!-- ARGUMENTS -->
+<section class="args">
+  <div class="args-grid">
+    <div class="arg"><div class="arg-icon">📍</div><div><h3>Au plus proche de vous</h3><p>Nous venons directement à votre adresse</p></div></div>
+    <div class="arg"><div class="arg-icon">⏱️</div><div><h3>Rapide &amp; efficace</h3><p>De 45 min à 3h selon la formule choisie</p></div></div>
+    <div class="arg"><div class="arg-icon">💧</div><div><h3>Matériel de qualité</h3><p>Turtle Wax, cire de protection, extraction eau</p></div></div>
   </div>
 </section>
 
-<!-- ── SUPPLÉMENTS ─────────────────────────────────────────── -->
+<!-- FORMULES -->
+<section class="carousel-section" id="tarifs">
+  <div class="s-header">
+    <div class="s-label">Nos formules</div>
+    <h2 class="s-title">Choisissez votre prestation</h2>
+    <p class="s-sub">Toutes réalisées chez vous, avec du matériel de qualité.</p>
+  </div>
+  <div class="carousel-ctrl">
+    <div class="car-dots" id="dots"></div>
+    <div class="car-arrows">
+      <button class="car-arrow" id="btn-prev" aria-label="Précédent">‹</button>
+      <button class="car-arrow" id="btn-next" aria-label="Suivant">›</button>
+    </div>
+  </div>
+  <div class="car-viewport">
+    <div class="car-track" id="car-track"></div>
+  </div>
+</section>
+
+<!-- SUPPLÉMENTS -->
 <section class="supps-section">
-  <div class="section-wrap">
-    <p class="section-label">Options</p>
-    <h2 class="section-title">Suppléments disponibles</h2>
-    <p class="section-sub">Ajoutables à toute formule (déjà inclus dans la Formule Showroom).</p>
-    <div class="supps-grid">
-      <div class="supp-card">
-        <div class="supp-emoji">🧽</div>
-        <div class="supp-info">
-          <div class="supp-nom">Extraction eau sièges &amp; moquettes</div>
-          <div class="supp-desc">Shampouinage par injecteur-extracteur — nettoyage en profondeur des sièges et moquettes</div>
-        </div>
-        <div class="supp-prix-wrap">
-          <div class="supp-prix">+15€</div>
-          <div class="supp-duree">+30 min</div>
-        </div>
-      </div>
-      <div class="supp-card">
-        <div class="supp-emoji">✨</div>
-        <div class="supp-info">
-          <div class="supp-nom">Cire de protection carrosserie</div>
-          <div class="supp-desc">Application car wax — protection et brillance longue durée (3 à 6 mois)</div>
-          <div class="supp-note">⚠️ La cire nécessite un espace ombragé ou un créneau matinal</div>
-        </div>
-        <div class="supp-prix-wrap">
-          <div class="supp-prix">+10€</div>
-          <div class="supp-duree">+25 min</div>
-        </div>
-      </div>
-    </div>
+  <div class="s-header">
+    <div class="s-label">Options disponibles</div>
+    <h2 class="s-title">Ajoutez des services</h2>
+    <p class="s-sub">Ajoutables à toute formule — déjà inclus dans la Formule Showroom</p>
   </div>
+  <div class="supps-grid" id="supps-grid"></div>
 </section>
 
-<!-- ── CTA FINAL ───────────────────────────────────────────── -->
-<section class="cta-section">
-  <h2>Prêt pour une voiture<br>impeccable ?</h2>
-  <p>Réservez en 2 minutes, nous venons chez vous.<br>Ath &amp; Enghien — Hainaut.</p>
+<!-- CTA -->
+<section class="cta">
+  <h2>Prêt pour une voiture impeccable ?</h2>
+  <p>Réservez en 2 minutes, nous venons chez vous</p>
   <a href="/reservation" class="btn-white">Prendre rendez-vous →</a>
 </section>
 
-<!-- ── FOOTER ──────────────────────────────────────────────── -->
+<!-- FOOTER -->
 <footer>
-  <div class="footer-logo">
-    <img src="/logo.png" alt="AutoClean" onerror="this.style.display='none'">
-    <span class="footer-logo-txt">Auto<span>Clean</span></span>
-  </div>
-  <p class="footer-zone">📍 Ath &amp; Enghien — Hainaut, Belgique</p>
-  <p class="footer-copy">© 2025 AutoClean — Tous droits réservés</p>
+  <img src="/logo.png" alt="AutoClean" class="footer-logo" onerror="this.style.display='none'">
+  <div class="footer-name">AutoClean</div>
+  <div class="footer-zone">Yttre &amp; Enghien, Hainaut</div>
+  <div class="footer-copy">© 2025 AutoClean — Tous droits réservés</div>
 </footer>
 
 <script>
-  // ── Carousel ──────────────────────────────────────
-  const carousel = document.getElementById('carousel');
-  const items    = carousel.querySelectorAll('.car-item');
-  const dotsEl   = document.getElementById('dots');
-  let current = 0;
+// ── Carousel ─────────────────────────────────────────────────────────────────
+let cfg = null;
+let cur = 0;
+let touchX = 0;
 
-  // Créer les dots
-  items.forEach((_, i) => {
-    const d = document.createElement('div');
-    d.className = 'car-dot' + (i === 0 ? ' active' : '');
-    d.onclick = () => scrollToItem(i);
-    dotsEl.appendChild(d);
+const track   = document.getElementById('car-track');
+const dotsEl  = document.getElementById('dots');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+
+function buildSlide(f) {
+  const badge = f.badge
+    ? `<span class="f-badge ${f.badge==='Populaire'?'pop':'prem'}">${f.badge}</span>`
+    : '';
+  const incl = f.inclut_supplements
+    ? `<div class="f-incl">✅ Extraction eau &amp; Cire déjà incluses</div>`
+    : '';
+  return `<div class="car-slide">
+    <div class="f-card">
+      ${badge}
+      <span class="f-emoji">${f.emoji}</span>
+      <div class="f-name">${f.nom}</div>
+      <div class="f-price"><sup>€</sup>${f.prix}</div>
+      <div class="f-dur">⏱ ${f.duree}</div>
+      <div class="f-desc">${f.description}</div>
+      ${incl}
+      <a href="/reservation?formule=${f.id}" class="btn-card">Choisir cette formule →</a>
+    </div>
+  </div>`;
+}
+
+function goTo(i) {
+  const count = cfg.FORMULES.length;
+  cur = ((i % count) + count) % count;
+  track.style.transform = `translateX(-${cur * 100}%)`;
+  dotsEl.querySelectorAll('.car-dot').forEach((d, j) => d.classList.toggle('active', j === cur));
+}
+
+function buildCarousel(formules) {
+  track.innerHTML = formules.map(buildSlide).join('');
+  dotsEl.innerHTML = formules.map((_, i) =>
+    `<div class="car-dot${i===0?' active':''}" data-i="${i}"></div>`).join('');
+  dotsEl.querySelectorAll('.car-dot').forEach(d =>
+    d.addEventListener('click', () => goTo(+d.dataset.i)));
+  btnPrev.onclick = () => goTo(cur - 1);
+  btnNext.onclick = () => goTo(cur + 1);
+
+  // Swipe tactile
+  track.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+  track.addEventListener('touchend',   e => {
+    const dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 40) goTo(dx < 0 ? cur + 1 : cur - 1);
   });
 
-  function updateDots() {
-    dotsEl.querySelectorAll('.car-dot').forEach((d, i) => {
-      d.classList.toggle('active', i === current);
-    });
-  }
+  // Touches clavier
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft')  goTo(cur - 1);
+    if (e.key === 'ArrowRight') goTo(cur + 1);
+  });
+}
 
-  function scrollToItem(i) {
-    current = Math.max(0, Math.min(i, items.length - 1));
-    const item = items[current];
-    carousel.scrollTo({ left: item.offsetLeft - 20, behavior: 'smooth' });
-    updateDots();
-  }
+function buildSupps(supplements) {
+  const grid = document.getElementById('supps-grid');
+  grid.innerHTML = supplements.map(s => `
+    <div class="supp-card">
+      <div class="supp-top">
+        <div class="supp-left">
+          <span class="supp-emoji">${s.emoji}</span>
+          <span class="supp-name">${s.nom}</span>
+        </div>
+        <div class="supp-right">
+          <div class="supp-price">+${s.prix}€</div>
+          <div class="supp-dur">+${s.duree_extra}</div>
+        </div>
+      </div>
+      <div class="supp-desc">${s.description}</div>
+      ${s.note ? `<div class="supp-note-wax">${s.note}</div>` : ''}
+      ${s.id === 'cire' ? '<div class="supp-note">🌤️ Nécessite un espace ombragé ou un créneau matinal</div>' : ''}
+    </div>`).join('');
+}
 
-  function scrollCar(dir) { scrollToItem(current + dir); }
-
-  // Sync dots on manual swipe
-  carousel.addEventListener('scroll', () => {
-    const scrollLeft = carousel.scrollLeft;
-    let closest = 0;
-    let minDist = Infinity;
-    items.forEach((item, i) => {
-      const dist = Math.abs(item.offsetLeft - 20 - scrollLeft);
-      if (dist < minDist) { minDist = dist; closest = i; }
-    });
-    if (closest !== current) { current = closest; updateDots(); }
-  }, { passive: true });
+fetch('/api/config').then(r => r.json()).then(data => {
+  cfg = data;
+  buildCarousel(data.FORMULES);
+  buildSupps(data.SUPPLEMENTS);
+});
 </script>
 </body>
 </html>
