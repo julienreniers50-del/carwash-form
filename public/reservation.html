@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+  <title>AutoClean — Réservation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg-page:    #FFFFFF;
+      --bg-surface: #F4F8FF;
+      --bg-card:    #FFFFFF;
+      --navy:       #0D1B3E;
+      --cyan:       #00AAFF;
+      --cyan-light: #33BBFF;
+      --text:       #0D1B3E;
+      --text-sec:   #4A6080;
+      --border:     #E0ECFF;
+      --border-a:   #00AAFF;
+      --success:    #00D4AA;
+      --error:      #FF4757;
+      --gold:       #F59E0B;
+      --radius:     14px;
+      --radius-sm:  10px;
+      --shadow:     0 2px 12px rgba(13,27,62,.07);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{
+      font-family:'Plus Jakarta Sans',sans-serif;
+      background:var(--bg-surface);color:var(--text);
+      min-height:100vh;-webkit-font-smoothing:antialiased;
+    }
+
+    /* ── HEADER ──────────────────────────────────── */
+    .res-header{
+      background:#fff;border-bottom:1px solid var(--border);
+      padding:14px 20px;display:flex;align-items:center;justify-content:space-between;
+      position:sticky;top:0;z-index:100;
+    }
+    .back-link{
+      display:flex;align-items:center;gap:6px;
+      font-size:14px;font-weight:600;color:var(--text-sec);
+      text-decoration:none;transition:color .2s;
+    }
+    .back-link:hover{color:var(--cyan);}
+    .res-header-title{font-size:15px;font-weight:700;color:var(--navy);}
+    .res-logo{display:flex;align-items:center;gap:8px;}
+    .res-logo img{height:28px;object-fit:contain;}
+    .res-logo-txt{font-size:15px;font-weight:800;color:var(--navy);}
+    .res-logo-txt span{color:var(--cyan);}
+
+    /* ── PROGRESS ────────────────────────────────── */
+    .progress-wrap{
+      background:#fff;border-bottom:1px solid var(--border);
+      padding:16px 20px 0;
+    }
+    .progress{display:flex;max-width:480px;margin:0 auto;}
+    .ps{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;}
+    .ps:not(:last-child)::after{
+      content:'';position:absolute;top:14px;left:50%;
+      width:100%;height:2px;background:var(--border);z-index:0;
+    }
+    .ps.done:not(:last-child)::after{background:var(--success);}
+    .ps.active:not(:last-child)::after{background:var(--border);}
+    .ps-num{
+      width:28px;height:28px;border-radius:50%;z-index:1;
+      border:2px solid var(--border);background:#fff;
+      display:flex;align-items:center;justify-content:center;
+      font-size:11px;font-weight:700;color:var(--text-sec);
+      transition:all .3s;
+    }
+    .ps.active .ps-num{border-color:var(--cyan);background:var(--cyan);color:#fff;}
+    .ps.done .ps-num{border-color:var(--success);background:var(--success);color:#fff;}
+    .ps-lbl{font-size:10px;color:var(--text-sec);font-weight:500;padding-bottom:12px;text-align:center;}
+    .ps.active .ps-lbl{color:var(--cyan);font-weight:700;}
+    .ps.done .ps-lbl{color:var(--success);}
+
+    /* ── MAIN ────────────────────────────────────── */
+    .res-main{padding:20px 16px 140px;max-width:480px;margin:0 auto;}
+    .step{display:none;}
+    .step.active{display:block;animation:fadeIn .25s ease;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+    .step-title{font-size:20px;font-weight:800;color:var(--navy);margin-bottom:4px;}
+    .step-sub{font-size:14px;color:var(--text-sec);margin-bottom:20px;line-height:1.5;}
+
+    /* ── FORMULES GRID ───────────────────────────── */
+    .formules-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
+    .f-card{
+      background:var(--bg-card);border:2px solid var(--border);
+      border-radius:var(--radius);padding:14px 12px;cursor:pointer;
+      transition:all .2s;position:relative;overflow:hidden;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .f-card:hover{border-color:rgba(0,170,255,.4);box-shadow:var(--shadow);}
+    .f-card.selected{
+      border-color:var(--cyan);background:#F0F9FF;
+      box-shadow:0 0 0 3px rgba(0,170,255,.15);
+    }
+    .f-card.selected::after{
+      content:'✓';position:absolute;top:8px;right:10px;
+      color:var(--cyan);font-size:14px;font-weight:800;
+    }
+    .fc-badge{
+      position:absolute;top:0;left:0;
+      font-size:9px;font-weight:800;padding:3px 8px;
+      border-radius:0 0 8px 0;text-transform:uppercase;
+    }
+    .fc-badge.pop{background:var(--cyan);color:#fff;}
+    .fc-badge.prem{background:var(--gold);color:#fff;}
+    .fc-emoji{font-size:22px;margin-bottom:6px;display:block;}
+    .fc-nom{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px;line-height:1.2;}
+    .fc-prix{font-size:20px;font-weight:800;color:var(--cyan);}
+    .fc-duree{font-size:10px;color:var(--text-sec);margin-bottom:6px;}
+    .fc-desc{font-size:10px;color:var(--text-sec);line-height:1.5;}
+
+    /* ── SUPPLÉMENTS ÉTAPE 1 ─────────────────────── */
+    .supps-section-title{
+      font-size:14px;font-weight:700;color:var(--navy);
+      margin-bottom:10px;padding-top:4px;
+    }
+    .supps-list{display:flex;flex-direction:column;gap:8px;}
+    .supp-toggle{
+      background:var(--bg-card);border:1.5px solid var(--border);
+      border-radius:var(--radius-sm);padding:14px;cursor:pointer;
+      display:flex;align-items:center;gap:12px;transition:all .2s;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .supp-toggle:hover{border-color:rgba(0,170,255,.4);}
+    .supp-toggle.selected{border-color:var(--cyan);background:#F0F9FF;}
+    .supp-toggle.disabled{opacity:.4;cursor:not-allowed;pointer-events:none;}
+    .supp-chk{
+      width:22px;height:22px;border-radius:6px;border:2px solid var(--border);
+      flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;
+    }
+    .supp-toggle.selected .supp-chk{background:var(--cyan);border-color:var(--cyan);}
+    .supp-toggle.selected .supp-chk::after{content:'✓';color:#fff;font-size:12px;font-weight:800;}
+    .supp-body{flex:1;}
+    .supp-name{font-size:13px;font-weight:700;color:var(--navy);}
+    .supp-detail{font-size:11px;color:var(--text-sec);line-height:1.4;}
+    .supp-inclu{font-size:11px;color:var(--success);font-weight:600;}
+    .supp-price{font-size:15px;font-weight:800;color:var(--cyan);flex-shrink:0;}
+
+    /* ── CALENDRIER ──────────────────────────────── */
+    .cal-card{
+      background:var(--bg-card);border:1px solid var(--border);
+      border-radius:var(--radius);overflow:hidden;margin-bottom:20px;
+      box-shadow:var(--shadow);
+    }
+    .cal-header{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 16px;border-bottom:1px solid var(--border);
+    }
+    .cal-title{font-size:15px;font-weight:800;color:var(--navy);}
+    .cal-nav{
+      width:34px;height:34px;border-radius:8px;
+      border:1.5px solid var(--border);background:#fff;
+      font-size:16px;cursor:pointer;color:var(--text-sec);
+      display:flex;align-items:center;justify-content:center;transition:all .2s;
+    }
+    .cal-nav:hover{border-color:var(--cyan);color:var(--cyan);}
+    .cal-body{padding:12px;}
+    .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px;}
+    .cal-wday{text-align:center;font-size:11px;font-weight:700;color:var(--text-sec);padding:4px 0;}
+    .cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+    .cal-day{
+      aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+      font-size:13px;font-weight:500;border-radius:8px;cursor:pointer;
+      transition:all .2s;-webkit-tap-highlight-color:transparent;
+    }
+    .cal-day.empty,.cal-day.disabled{color:rgba(74,96,128,.3);cursor:not-allowed;}
+    .cal-day.weekend{color:rgba(74,96,128,.25);cursor:not-allowed;}
+    .cal-day.available:hover{background:rgba(0,170,255,.12);color:var(--cyan);}
+    .cal-day.selected{background:var(--cyan);color:#fff;font-weight:700;box-shadow:0 2px 8px rgba(0,170,255,.35);}
+    .cal-day.today{border:1.5px solid var(--cyan);color:var(--cyan);}
+    .cal-day.today.selected{color:#fff;}
+
+    /* ── CRÉNEAUX ────────────────────────────────── */
+    .creneaux-wrap{margin-bottom:20px;}
+    .creneaux-title{font-size:13px;font-weight:700;color:var(--text-sec);margin-bottom:10px;}
+    .creneaux-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+    .cr-btn{
+      padding:11px 4px;border-radius:var(--radius-sm);
+      border:1.5px solid var(--border);background:#fff;
+      font-family:'Plus Jakarta Sans',sans-serif;
+      font-size:13px;font-weight:600;color:var(--text);
+      cursor:pointer;text-align:center;transition:all .2s;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .cr-btn:hover:not(.taken){border-color:var(--cyan);color:var(--cyan);}
+    .cr-btn.selected{background:var(--cyan);border-color:var(--cyan);color:#fff;}
+    .cr-btn.taken{color:rgba(74,96,128,.35);cursor:not-allowed;font-size:11px;text-decoration:line-through;}
+    .cr-loading{text-align:center;color:var(--text-sec);font-size:13px;padding:16px 0;}
+
+    /* ── FORMULAIRE CLIENT ───────────────────────── */
+    .recap-card{
+      background:#F0F9FF;border:1px solid rgba(0,170,255,.25);
+      border-radius:var(--radius);padding:14px 16px;margin-bottom:20px;
+    }
+    .recap-card h3{font-size:12px;font-weight:700;color:var(--text-sec);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+    .recap-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,170,255,.1);}
+    .recap-row:last-child{border-bottom:none;padding-top:8px;}
+    .recap-row .rk{font-size:12px;color:var(--text-sec);}
+    .recap-row .rv{font-size:13px;font-weight:600;color:var(--navy);text-align:right;max-width:220px;}
+    .recap-row.total .rv{font-size:20px;font-weight:800;color:var(--cyan);}
+    .form-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .field{margin-bottom:14px;}
+    .field label{display:block;font-size:13px;font-weight:600;color:var(--text-sec);margin-bottom:5px;}
+    .field label .req{color:var(--cyan);margin-left:2px;}
+    .field input{
+      width:100%;background:#fff;
+      border:1.5px solid var(--border);border-radius:var(--radius-sm);
+      padding:12px 13px;color:var(--navy);
+      font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;
+      outline:none;transition:border-color .2s,box-shadow .2s;
+      -webkit-appearance:none;
+    }
+    .field input::placeholder{color:rgba(74,96,128,.4);}
+    .field input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,170,255,.12);}
+    .addr-row1{display:grid;grid-template-columns:1fr 80px;gap:10px;}
+    .addr-row2{display:grid;grid-template-columns:90px 1fr;gap:10px;}
+    .check-label{
+      display:flex;align-items:flex-start;gap:12px;
+      background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+      padding:14px;cursor:pointer;transition:border-color .2s;
+    }
+    .check-label.checked{border-color:var(--cyan);}
+    .check-box{
+      width:22px;height:22px;border-radius:6px;border:2px solid var(--border);
+      flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;
+    }
+    .check-label.checked .check-box{background:var(--cyan);border-color:var(--cyan);}
+    .check-label.checked .check-box::after{content:'✓';color:#fff;font-size:13px;font-weight:700;}
+    .check-txt{font-size:13px;color:var(--text-sec);line-height:1.5;}
+    .error-msg{
+      background:#FEF2F2;border:1px solid #FECACA;border-radius:var(--radius-sm);
+      padding:12px 14px;font-size:13px;color:#B91C1C;margin-top:12px;display:none;
+    }
+
+    /* ── CONFIRMATION ────────────────────────────── */
+    #step-4{text-align:center;padding-top:16px;}
+    .confirm-icon{
+      width:80px;height:80px;
+      background:linear-gradient(135deg,var(--cyan),var(--success));
+      border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+      font-size:34px;margin-bottom:20px;
+      box-shadow:0 6px 24px rgba(0,170,255,.3);
+      animation:popIn .5s cubic-bezier(.175,.885,.32,1.275);
+    }
+    @keyframes popIn{from{transform:scale(0);opacity:0;}to{transform:scale(1);opacity:1;}}
+    #step-4 h2{font-size:24px;font-weight:800;color:var(--navy);margin-bottom:8px;}
+    #step-4 .confirm-sub{font-size:14px;color:var(--text-sec);line-height:1.6;margin-bottom:24px;}
+    .confirm-recap{
+      background:#fff;border:1px solid var(--border);
+      border-radius:var(--radius);padding:20px;text-align:left;margin-bottom:24px;
+      box-shadow:var(--shadow);
+    }
+    .btn-nouvelle{
+      background:none;border:2px solid var(--border);
+      border-radius:var(--radius);padding:12px 28px;
+      font-family:'Plus Jakarta Sans',sans-serif;
+      font-size:14px;font-weight:600;color:var(--text-sec);cursor:pointer;transition:all .2s;
+    }
+    .btn-nouvelle:hover{border-color:var(--cyan);color:var(--cyan);}
+
+    /* ── STICKY FOOTER ───────────────────────────── */
+    .sticky-footer{
+      position:fixed;bottom:0;left:0;right:0;
+      background:#fff;border-top:1px solid var(--border);
+      padding:12px 16px;z-index:50;
+      box-shadow:0 -4px 20px rgba(13,27,62,.08);
+    }
+    .sf-inner{max-width:480px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+    .sf-total{white-space:nowrap;}
+    .sf-total small{font-size:11px;color:var(--text-sec);display:block;}
+    .sf-total span{font-size:22px;font-weight:800;color:var(--cyan);}
+    .sf-btns{display:flex;gap:8px;flex:1;justify-content:flex-end;}
+    .btn-back{
+      padding:12px 16px;border-radius:var(--radius-sm);
+      background:none;border:1.5px solid var(--border);
+      color:var(--text-sec);font-family:'Plus Jakarta Sans',sans-serif;
+      font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;
+    }
+    .btn-back:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan);}
+    .btn-back:disabled{opacity:.3;cursor:not-allowed;}
+    .btn-next{
+      flex:1;padding:12px 16px;border-radius:var(--radius-sm);
+      background:linear-gradient(135deg,var(--navy),#1a3a7a);
+      border:none;color:#fff;
+      font-family:'Plus Jakarta Sans',sans-serif;
+      font-size:15px;font-weight:700;cursor:pointer;
+      transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;
+    }
+    .btn-next:hover:not(:disabled){background:linear-gradient(135deg,#1a3a7a,var(--cyan));}
+    .btn-next:disabled{opacity:.35;cursor:not-allowed;}
+    .btn-next .sp{
+      width:16px;height:16px;border:2px solid rgba(255,255,255,.3);
+      border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none;
+    }
+    .btn-next.loading .sp{display:block;}
+    .btn-next.loading .lbl{display:none;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+
+    @media(min-width:480px){
+      .res-main{padding:24px 24px 140px;}
+      .creneaux-grid{grid-template-columns:repeat(4,1fr);}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ────────────────────────────────────────────── -->
+<header class="res-header">
+  <a href="/" class="back-link">← Accueil</a>
+  <span class="res-header-title">Réservation</span>
+  <div class="res-logo">
+    <img src="/logo.png" alt="" onerror="this.style.display='none'">
+    <span class="res-logo-txt">Auto<span>Clean</span></span>
+  </div>
+</header>
+
+<!-- ── PROGRESS ──────────────────────────────────────────── -->
+<div class="progress-wrap">
+  <nav class="progress" id="progress">
+    <div class="ps active" data-s="1"><div class="ps-num">1</div><div class="ps-lbl">Formule</div></div>
+    <div class="ps" data-s="2"><div class="ps-num">2</div><div class="ps-lbl">Créneau</div></div>
+    <div class="ps" data-s="3"><div class="ps-num">3</div><div class="ps-lbl">Vos infos</div></div>
+    <div class="ps" data-s="4"><div class="ps-num">4</div><div class="ps-lbl">Confirmation</div></div>
+  </nav>
+</div>
+
+<!-- ── MAIN ──────────────────────────────────────────────── -->
+<main class="res-main">
+
+  <!-- ÉTAPE 1 : Formule + Suppléments -->
+  <div class="step active" id="step-1">
+    <h2 class="step-title">Choisissez votre formule</h2>
+    <p class="step-sub">Sélectionnez la prestation souhaitée.</p>
+    <div class="formules-grid" id="formules-grid"></div>
+    <div class="supps-section-title">Options supplémentaires</div>
+    <div class="supps-list" id="supps-list"></div>
+  </div>
+
+  <!-- ÉTAPE 2 : Date & heure -->
+  <div class="step" id="step-2">
+    <h2 class="step-title">Choisissez un créneau</h2>
+    <p class="step-sub">Sélectionnez une date et un horaire disponibles.</p>
+    <div class="cal-card">
+      <div class="cal-header">
+        <button class="cal-nav" id="cal-prev">‹</button>
+        <span class="cal-title" id="cal-title">—</span>
+        <button class="cal-nav" id="cal-next">›</button>
+      </div>
+      <div class="cal-body">
+        <div class="cal-weekdays">
+          <div class="cal-wday">L</div><div class="cal-wday">M</div><div class="cal-wday">M</div>
+          <div class="cal-wday">J</div><div class="cal-wday">V</div>
+          <div class="cal-wday" style="color:rgba(74,96,128,.3)">S</div>
+          <div class="cal-wday" style="color:rgba(74,96,128,.3)">D</div>
+        </div>
+        <div class="cal-days" id="cal-days"></div>
+      </div>
+    </div>
+    <div class="creneaux-wrap" id="creneaux-wrap" style="display:none;">
+      <p class="creneaux-title" id="creneaux-title">Créneaux disponibles</p>
+      <div class="creneaux-grid" id="creneaux-grid"></div>
+    </div>
+  </div>
+
+  <!-- ÉTAPE 3 : Infos client -->
+  <div class="step" id="step-3">
+    <h2 class="step-title">Vos informations</h2>
+    <p class="step-sub">Nous vous enverrons une confirmation par SMS et email.</p>
+    <div class="recap-card" id="recap3"></div>
+    <div class="form-grid2">
+      <div class="field"><label>Prénom <span class="req">*</span></label><input id="f-prenom" type="text" placeholder="Marie" autocomplete="given-name"/></div>
+      <div class="field"><label>Nom <span class="req">*</span></label><input id="f-nom" type="text" placeholder="Dupont" autocomplete="family-name"/></div>
+    </div>
+    <div class="field"><label>Téléphone <span class="req">*</span></label><input id="f-tel" type="tel" placeholder="04xx xx xx xx ou +32 4xx xx xx xx" autocomplete="tel" inputmode="tel"/></div>
+    <div class="field"><label>Email <span class="req">*</span></label><input id="f-email" type="email" placeholder="marie@email.com" autocomplete="email" inputmode="email"/></div>
+    <div class="field">
+      <label>Adresse <span class="req">*</span></label>
+      <div class="addr-row1" style="margin-bottom:8px;">
+        <input id="f-rue" type="text" placeholder="Rue des Lilas" autocomplete="street-address"/>
+        <input id="f-num" type="text" placeholder="N° 12"/>
+      </div>
+      <div class="addr-row2">
+        <input id="f-cp" type="text" placeholder="7800" inputmode="numeric" maxlength="4" autocomplete="postal-code"/>
+        <input id="f-ville" type="text" placeholder="Ath" autocomplete="address-level2"/>
+      </div>
+    </div>
+    <label class="check-label" id="fonce-label">
+      <div class="check-box" id="fonce-box"></div>
+      <span class="check-txt">🖤 Mon véhicule est de couleur noire ou foncée<br><small style="color:rgba(74,96,128,.6)">Info utile pour l'application black wax</small></span>
+    </label>
+    <div class="error-msg" id="form-err"></div>
+  </div>
+
+  <!-- ÉTAPE 4 : Confirmation -->
+  <div class="step" id="step-4">
+    <div class="confirm-icon">✓</div>
+    <h2>Réservation confirmée !</h2>
+    <p class="confirm-sub">Vous recevrez une confirmation<br>par SMS et email dans quelques minutes.</p>
+    <div class="confirm-recap" id="confirm-recap"></div>
+    <button class="btn-nouvelle" onclick="location.href='/reservation'">Faire une nouvelle réservation</button>
+  </div>
+
+</main>
+
+<!-- ── STICKY FOOTER ─────────────────────────────────────── -->
+<footer class="sticky-footer" id="sticky-footer">
+  <div class="sf-inner">
+    <div class="sf-total">
+      <small>Total estimé</small>
+      <span id="footer-prix">0€</span>
+    </div>
+    <div class="sf-btns">
+      <button class="btn-back" id="btn-back" onclick="prevStep()" disabled>← Retour</button>
+      <button class="btn-next" id="btn-next" onclick="nextStep()" disabled>
+        <div class="sp"></div><span class="lbl">Suivant →</span>
+      </button>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ────────────────────────────────────────────────────────
+// STATE
+// ────────────────────────────────────────────────────────
+let CFG = null;
+let S = {
+  step: 1,
+  formuleId: null,
+  supplements: new Set(),
+  dateStr: null,
+  heure: null,
+  fonce: false,
+  calYear: new Date().getFullYear(),
+  calMonth: new Date().getMonth(),
+  creneaux: { disponibles: [], reserves: [] }
+};
+
+// ────────────────────────────────────────────────────────
+// HELPERS
+// ────────────────────────────────────────────────────────
+const getF = () => CFG?.FORMULES.find(f => f.id === S.formuleId);
+function getPrix() {
+  const f = getF(); if (!f) return 0;
+  let t = f.prix;
+  S.supplements.forEach(id => { const s = CFG.SUPPLEMENTS.find(x => x.id === id); if (s) t += s.prix; });
+  return t;
+}
+function pad(n) { return String(n).padStart(2,'0'); }
+function toStr(d) { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function isOuvre(d) { return CFG.JOURS_OUVRES.includes(d.getDay()); }
+const MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const JOURS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+const MOIS_C = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+function dateLisible(s) {
+  const d = new Date(s + 'T12:00:00');
+  return `${JOURS[d.getDay()]} ${d.getDate()} ${MOIS_C[d.getMonth()]}`;
+}
+
+// ────────────────────────────────────────────────────────
+// UI UPDATES
+// ────────────────────────────────────────────────────────
+function updatePrix() { document.getElementById('footer-prix').textContent = getPrix() + '€'; }
+
+function updateProgress() {
+  document.querySelectorAll('.ps').forEach(el => {
+    const n = +el.dataset.s;
+    el.classList.remove('active','done');
+    if (n === S.step) el.classList.add('active');
+    else if (n < S.step) el.classList.add('done');
+  });
+}
+
+function updateNav() {
+  const back = document.getElementById('btn-back');
+  const next = document.getElementById('btn-next');
+  const lbl  = next.querySelector('.lbl');
+  back.disabled = S.step === 1;
+  lbl.textContent = S.step === 3 ? 'Confirmer ✓' : 'Suivant →';
+  next.style.background = S.step === 3
+    ? 'linear-gradient(135deg,#00AAFF,#00D4AA)'
+    : 'linear-gradient(135deg,#0D1B3E,#1a3a7a)';
+  switch(S.step) {
+    case 1: next.disabled = !S.formuleId; break;
+    case 2: next.disabled = !(S.dateStr && S.heure); break;
+    case 3: next.disabled = false; break;
+    default: next.disabled = true;
+  }
+}
+
+function setLoading(v) {
+  const btn = document.getElementById('btn-next');
+  btn.disabled = v;
+  btn.classList.toggle('loading', v);
+}
+
+function showErr(msg) {
+  const el = document.getElementById('form-err');
+  el.textContent = msg; el.style.display = msg ? 'block' : 'none';
+}
+
+// ────────────────────────────────────────────────────────
+// NAVIGATION
+// ────────────────────────────────────────────────────────
+function goTo(n) {
+  document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+  document.getElementById(`step-${n}`).classList.add('active');
+  S.step = n;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  updateProgress();
+  updateNav();
+  document.getElementById('sticky-footer').style.display = n === 4 ? 'none' : '';
+  if (n === 3) renderRecap();
+}
+
+function nextStep() { if (S.step === 3) { submit(); return; } goTo(S.step + 1); }
+function prevStep() { if (S.step > 1) goTo(S.step - 1); }
+
+// ────────────────────────────────────────────────────────
+// ÉTAPE 1 — Formules & Suppléments
+// ────────────────────────────────────────────────────────
+function renderFormules() {
+  const g = document.getElementById('formules-grid');
+  g.innerHTML = CFG.FORMULES.map(f => `
+    <div class="f-card${S.formuleId===f.id?' selected':''}" onclick="selectF('${f.id}')">
+      ${f.badge ? `<span class="fc-badge ${f.badge==='Populaire'?'pop':'prem'}">${f.badge}</span>` : ''}
+      <span class="fc-emoji">${f.emoji}</span>
+      <div class="fc-nom">${f.nom}</div>
+      <div class="fc-prix">${f.prix}€</div>
+      <div class="fc-duree">⏱ ${f.duree}</div>
+      <div class="fc-desc">${f.description.substring(0,80)}...</div>
+    </div>`).join('');
+}
+
+function renderSupps() {
+  const showroom = S.formuleId === 'showroom';
+  const g = document.getElementById('supps-list');
+  g.innerHTML = CFG.SUPPLEMENTS.map(s => {
+    const isIncompat = s.incompatible_avec.includes(S.formuleId);
+    const isSel = S.supplements.has(s.id);
+    return `
+    <div class="supp-toggle${isSel?' selected':''}${isIncompat?' disabled':''}" onclick="${isIncompat?'':'toggleSupp(\''+s.id+'\')'}">
+      <div class="supp-chk"></div>
+      <div class="supp-body">
+        <div class="supp-name">${s.emoji} ${s.nom}</div>
+        <div class="supp-detail">${s.description}</div>
+        ${isIncompat ? '<div class="supp-inclu">✅ Déjà inclus dans la Formule Showroom</div>' : ''}
+      </div>
+      <div class="supp-price">${isIncompat ? '' : '+'+s.prix+'€'}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectF(id) {
+  S.formuleId = id;
+  S.supplements.clear();
+  updatePrix(); renderFormules(); renderSupps(); updateNav();
+}
+
+function toggleSupp(id) {
+  if (S.supplements.has(id)) S.supplements.delete(id);
+  else S.supplements.add(id);
+  updatePrix(); renderSupps();
+}
+
+// ────────────────────────────────────────────────────────
+// ÉTAPE 2 — Calendrier
+// ────────────────────────────────────────────────────────
+function renderCal() {
+  const { calYear: y, calMonth: m } = S;
+  document.getElementById('cal-title').textContent = `${MOIS[m]} ${y}`;
+  const today  = new Date(); today.setHours(0,0,0,0);
+  const maxD   = new Date(today); maxD.setDate(today.getDate() + CFG.JOURS_MAX_A_L_AVANCE);
+  const first  = new Date(y, m, 1);
+  let offset   = first.getDay() - 1; if (offset < 0) offset = 6;
+  const days   = new Date(y, m+1, 0).getDate();
+  const cont   = document.getElementById('cal-days');
+  cont.innerHTML = '';
+  for (let i = 0; i < offset; i++) {
+    const el = document.createElement('div'); el.className = 'cal-day empty'; cont.appendChild(el);
+  }
+  for (let d = 1; d <= days; d++) {
+    const dt  = new Date(y, m, d); const ds = toStr(dt);
+    const el  = document.createElement('div'); el.textContent = d; el.className = 'cal-day';
+    const isTd  = dt.getTime() === today.getTime();
+    const isFut = dt > today && dt <= maxD;
+    const isWE  = dt.getDay() === 0 || dt.getDay() === 6;
+    if (isTd) el.classList.add('today');
+    if (isFut && !isWE && isOuvre(dt)) {
+      el.classList.add('available');
+      if (S.dateStr === ds) el.classList.add('selected');
+      el.addEventListener('click', () => selectDate(ds));
+    } else { el.classList.add(isWE ? 'weekend' : 'disabled'); }
+    cont.appendChild(el);
+  }
+}
+
+async function selectDate(ds) {
+  S.dateStr = ds; S.heure = null;
+  renderCal(); updateNav();
+  const w = document.getElementById('creneaux-wrap');
+  const g = document.getElementById('creneaux-grid');
+  const t = document.getElementById('creneaux-title');
+  w.style.display = 'block';
+  g.innerHTML = '<div class="cr-loading">Chargement...</div>';
+  t.textContent = `Créneaux — ${dateLisible(ds)}`;
+  try {
+    const r = await fetch(`/api/creneaux?date=${ds}`);
+    S.creneaux = await r.json();
+    renderCreneaux();
+  } catch { g.innerHTML = '<div class="cr-loading">Erreur de chargement.</div>'; }
+}
+
+function renderCreneaux() {
+  const g = document.getElementById('creneaux-grid');
+  g.innerHTML = CFG.CRENEAUX.map(h => {
+    const taken = S.creneaux.reserves?.includes(h);
+    const sel   = S.heure === h;
+    return `<button class="cr-btn${taken?' taken':''}${sel?' selected':''}" ${taken?'disabled':''} onclick="${taken?'':'selectH(\''+h+'\')'}">${taken?'Complet':h}</button>`;
+  }).join('');
+}
+
+function selectH(h) { S.heure = h; renderCreneaux(); updateNav(); }
+
+document.getElementById('cal-prev').onclick = () => {
+  S.calMonth--; if (S.calMonth < 0) { S.calMonth = 11; S.calYear--; } renderCal();
+};
+document.getElementById('cal-next').onclick = () => {
+  S.calMonth++; if (S.calMonth > 11) { S.calMonth = 0; S.calYear++; } renderCal();
+};
+
+// ────────────────────────────────────────────────────────
+// ÉTAPE 3 — Récap & formulaire
+// ────────────────────────────────────────────────────────
+function renderRecap() {
+  const f     = getF();
+  const supps = Array.from(S.supplements).map(id => CFG.SUPPLEMENTS.find(s=>s.id===id)?.nom).filter(Boolean);
+  document.getElementById('recap3').innerHTML = `
+    <h3>Récapitulatif</h3>
+    <div class="recap-row"><span class="rk">📅 Date & heure</span><span class="rv">${dateLisible(S.dateStr)} à ${S.heure}</span></div>
+    <div class="recap-row"><span class="rk">🚗 Formule</span><span class="rv">${f?.emoji} ${f?.nom}</span></div>
+    ${supps.length ? `<div class="recap-row"><span class="rk">➕ Options</span><span class="rv">${supps.join(', ')}</span></div>` : ''}
+    <div class="recap-row total"><span class="rk">💶 Total</span><span class="rv">${getPrix()}€</span></div>`;
+}
+
+// Checkbox véhicule foncé
+document.getElementById('fonce-label').onclick = () => {
+  S.fonce = !S.fonce;
+  const box = document.getElementById('fonce-box');
+  const lbl = document.getElementById('fonce-label');
+  lbl.classList.toggle('checked', S.fonce);
+  box.style.background    = S.fonce ? 'var(--cyan)' : '';
+  box.style.borderColor   = S.fonce ? 'var(--cyan)' : '';
+  box.textContent         = S.fonce ? '✓' : '';
+  box.style.color         = '#fff';
+};
+
+document.getElementById('f-cp').addEventListener('input', e => {
+  e.target.value = e.target.value.replace(/\D/g,'').slice(0,4);
+});
+
+// ────────────────────────────────────────────────────────
+// SOUMISSION
+// ────────────────────────────────────────────────────────
+function valTel(t) { return /^(\+32|0)[0-9]{8,9}$/.test(t.replace(/[\s.\-()]/g,'')); }
+function valEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+
+async function submit() {
+  showErr('');
+  const prenom = document.getElementById('f-prenom').value.trim();
+  const nom    = document.getElementById('f-nom').value.trim();
+  const tel    = document.getElementById('f-tel').value.trim();
+  const email  = document.getElementById('f-email').value.trim();
+  const rue    = document.getElementById('f-rue').value.trim();
+  const num    = document.getElementById('f-num').value.trim();
+  const cp     = document.getElementById('f-cp').value.trim();
+  const ville  = document.getElementById('f-ville').value.trim();
+
+  if (!prenom || prenom.length < 2) return showErr('Veuillez saisir votre prénom.');
+  if (!nom    || nom.length < 2)    return showErr('Veuillez saisir votre nom.');
+  if (!valTel(tel))                 return showErr('Téléphone belge invalide. Ex : 0470 12 34 56');
+  if (!valEmail(email))             return showErr('Adresse email invalide.');
+  if (!rue || !cp || !ville)        return showErr('Veuillez remplir votre adresse complète.');
+  if (!/^\d{4}$/.test(cp))         return showErr('Code postal belge invalide (4 chiffres).');
+
+  setLoading(true);
+  try {
+    const res = await fetch('/api/reservation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prenom, nom, telephone: tel, email,
+        adresse: [rue, num].filter(Boolean).join(' '),
+        codePostal: cp, ville,
+        formuleId: S.formuleId,
+        supplements: Array.from(S.supplements),
+        dateRdv: S.dateStr, heureRdv: S.heure,
+        vehiculeFonce: S.fonce
+      })
+    });
+    const data = await res.json();
+    if (data.succes) {
+      renderConfirm(data.reservation, prenom, nom, rue, num, cp, ville);
+      goTo(4);
+    } else {
+      showErr(Array.isArray(data.erreurs) ? data.erreurs.join(' ') : 'Une erreur est survenue.');
+    }
+  } catch { showErr('Impossible de contacter le serveur. Vérifiez votre connexion.'); }
+  finally { setLoading(false); }
+}
+
+function renderConfirm(r, prenom, nom, rue, num, cp, ville) {
+  const f     = getF();
+  const supps = Array.from(S.supplements).map(id => CFG.SUPPLEMENTS.find(s=>s.id===id)?.nom).filter(Boolean);
+  const supStr = supps.length ? supps.join(', ') : 'Aucun';
+  document.getElementById('confirm-recap').innerHTML = `
+    <div class="recap-row"><span class="rk">👤 Client</span><span class="rv">${prenom} ${nom}</span></div>
+    <div class="recap-row"><span class="rk">📅 Date & heure</span><span class="rv">${dateLisible(S.dateStr)} à ${S.heure}</span></div>
+    <div class="recap-row"><span class="rk">🚗 Formule</span><span class="rv">${f?.emoji} ${f?.nom}</span></div>
+    <div class="recap-row"><span class="rk">➕ Options</span><span class="rv">${supStr}</span></div>
+    <div class="recap-row"><span class="rk">📍 Adresse</span><span class="rv">${[rue,num,cp,ville].filter(Boolean).join(', ')}</span></div>
+    <div class="recap-row total"><span class="rk">💶 Total</span><span class="rv">${getPrix()}€</span></div>`;
+}
+
+// ────────────────────────────────────────────────────────
+// URL PARAM ?formule=ID
+// ────────────────────────────────────────────────────────
+function checkUrlParam() {
+  const p = new URLSearchParams(window.location.search).get('formule');
+  if (p && CFG.FORMULES.find(f => f.id === p)) selectF(p);
+}
+
+// ────────────────────────────────────────────────────────
+// INIT
+// ────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const r = await fetch('/api/config');
+    CFG = await r.json();
+    renderFormules();
+    renderSupps();
+    renderCal();
+    updatePrix();
+    updateNav();
+    checkUrlParam();
+  } catch(e) {
+    document.getElementById('formules-grid').innerHTML = '<p style="color:var(--error);padding:16px;grid-column:1/-1;">Erreur de chargement. Rechargez la page.</p>';
+  }
+}
+init();
+</script>
+</body>
+</html>
