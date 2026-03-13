@@ -60,17 +60,26 @@
     .step-sub{font-size:14px;color:var(--text-secondary);margin-bottom:24px;}
 
     /* ── GRILLE FORMULES (étape 1) ───────────────── */
-    .formules-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
+    .formules-grid{
+      display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;
+      overflow:hidden;align-items:start;
+    }
 
     /* Card formule cliquable */
     .f-card{
       background:var(--bg-card);border:2px solid var(--border);
       border-radius:var(--radius);padding:14px 12px;box-shadow:var(--shadow);
-      cursor:pointer;transition:all .2s;position:relative;overflow:hidden;
+      cursor:pointer;transition:border-color .2s,background .2s;
+      position:relative;overflow:hidden;
+      display:flex;flex-direction:column;
+      word-break:break-word;overflow-wrap:break-word;
     }
     .f-card:hover{border-color:rgba(0,170,255,.4);}
-    .f-card.selected{border-color:var(--cyan);background:#F0F9FF;}
-    .f-badge{position:absolute;top:0;right:0;font-size:9px;font-weight:700;padding:4px 10px;border-radius:0 var(--radius) 0 8px;text-transform:uppercase;letter-spacing:.5px;}
+    .f-card.selected{
+      border-color:var(--cyan);background:#F0F9FF;
+      box-shadow:0 0 0 3px rgba(0,170,255,.12);
+    }
+    .f-badge{position:absolute;top:0;right:0;font-size:9px;font-weight:700;padding:4px 10px;border-radius:0 var(--radius) 0 8px;text-transform:uppercase;letter-spacing:.5px;z-index:2;}
     .f-badge.pop{background:var(--cyan);color:#fff;}
     .f-badge.prem{background:#F59E0B;color:#fff;}
     .f-emoji{font-size:24px;margin-bottom:6px;display:block;}
@@ -79,22 +88,26 @@
     .f-price sup{font-size:14px;vertical-align:top;margin-top:4px;}
     .f-dur{font-size:11px;color:var(--text-secondary);margin:4px 0 8px;}
     .f-desc{font-size:11px;color:var(--text-secondary);line-height:1.5;margin-bottom:8px;}
-    .f-incl{background:#EFFDF9;border:1px solid #A7F3D0;border-radius:6px;padding:5px 8px;font-size:10px;color:#047857;font-weight:600;}
+    .f-incl{background:#EFFDF9;border:1px solid #A7F3D0;border-radius:6px;padding:5px 8px;font-size:10px;color:#047857;font-weight:600;margin-top:auto;}
     .f-select-indicator{display:none;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--cyan);margin-top:8px;}
     .f-card.selected .f-select-indicator{display:flex;}
 
     /* ── SUPPLÉMENTS (étape 1) ──────────────────── */
-    .supps-wrap{margin-top:24px;}
+    .supps-wrap{
+      margin-top:24px;position:relative;z-index:10;
+      background:var(--bg-surface);
+    }
     .supps-title{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:14px;}
     .supp-toggle{
       background:var(--bg-card);border:2px solid var(--border);
       border-radius:var(--radius);padding:16px;margin-bottom:10px;
       display:flex;align-items:flex-start;gap:12px;cursor:pointer;
-      transition:all .2s;
+      transition:border-color .2s,background .2s;
+      position:relative;overflow:hidden;
     }
     .supp-toggle:hover{border-color:rgba(0,170,255,.3);}
     .supp-toggle.selected{border-color:var(--cyan);background:#F0F9FF;}
-    .supp-toggle.disabled{opacity:.45;cursor:not-allowed;pointer-events:none;}
+    .supp-toggle.disabled{opacity:.45;cursor:not-allowed;pointer-events:none;background:#F5F5F5;}
     .supp-check{
       width:22px;height:22px;border-radius:6px;border:2px solid var(--border);
       flex-shrink:0;display:flex;align-items:center;justify-content:center;
@@ -109,8 +122,8 @@
     .supp-dur{font-size:12px;color:var(--text-secondary);}
     .supp-desc{font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:6px;}
     /* Description formule en tirets */
-    .f-desc-list{list-style:none;padding:0;margin-bottom:8px;}
-    .f-desc-list li{font-size:11px;color:var(--text-secondary);line-height:1.5;padding-left:10px;position:relative;margin-bottom:2px;}
+    .f-desc-list{list-style:none;padding:0;margin-bottom:8px;overflow:hidden;}
+    .f-desc-list li{font-size:11px;color:var(--text-secondary);line-height:1.5;padding-left:10px;position:relative;margin-bottom:2px;word-break:break-word;overflow-wrap:break-word;}
     .f-desc-list li::before{content:'—';position:absolute;left:0;color:var(--disabled);}
     .supp-note-wax{font-size:11px;color:var(--text-secondary);margin-top:4px;}
     .supp-incl-badge{background:#EFFDF9;border-radius:6px;padding:4px 10px;font-size:11px;color:#047857;font-weight:600;margin-top:8px;display:inline-block;}
