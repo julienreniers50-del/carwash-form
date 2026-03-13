@@ -116,11 +116,11 @@
     .supp-toggle.selected .supp-check{background:var(--cyan);border-color:var(--cyan);color:#fff;}
     .supp-body{flex:1;min-width:0;}
     .supp-top2{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
-    .supp-name{font-size:14px;font-weight:700;color:var(--navy);flex:1;min-width:0;}
+    .supp-name{font-size:14px;font-weight:700;color:var(--navy);flex:1;min-width:0;word-break:break-word;}
     .supp-right{text-align:right;flex-shrink:0;}
     .supp-pricetag{font-size:16px;font-weight:800;color:var(--cyan);}
     .supp-dur{font-size:12px;color:var(--text-secondary);}
-    .supp-desc{font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:6px;}
+    .supp-desc{font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:6px;word-break:break-word;}
     /* Description formule en tirets */
     .f-desc-list{list-style:none;padding:0;margin-bottom:8px;overflow:hidden;}
     .f-desc-list li{font-size:11px;color:var(--text-secondary);line-height:1.5;padding-left:10px;position:relative;margin-bottom:2px;word-break:break-word;overflow-wrap:break-word;}
@@ -620,7 +620,6 @@ function selectFormule(id) {
     const el = document.getElementById('supp-' + s.id);
     if (f.inclut_supplements) {
       el.classList.add('disabled');
-      el.innerHTML = el.innerHTML.replace('</div>', '') ; // keep as is
       // Ajouter badge "inclus" si pas encore
       if (!el.querySelector('.supp-incl-badge')) {
         el.querySelector('.supp-body').insertAdjacentHTML('beforeend', '<span class="supp-incl-badge">✅ Déjà inclus dans cette formule</span>');
