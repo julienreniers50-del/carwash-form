@@ -17,8 +17,8 @@ const FORMULES = [
     nom:               'Lavage Intérieur',
     emoji:             '🪑',
     prix:              25,
-    duree:             '45 min',
-    duree_minutes:     45,
+    duree:             'Environ 1h',
+    duree_minutes:     60,
     description:       'Aspiration complète habitacle, nettoyage plastiques intérieurs, vitres intérieures sans traces',
     badge:             null,
     inclut_supplements: false
@@ -28,7 +28,7 @@ const FORMULES = [
     nom:               'Lavage Extérieur',
     emoji:             '🚗',
     prix:              35,
-    duree:             '45 min',
+    duree:             'Environ 45 min',
     duree_minutes:     45,
     description:       'Shampoing carrosserie, nettoyage jantes, gel brillant pneus, traitement plastiques extérieurs, silicone joints portes & coffre',
     badge:             null,
@@ -39,8 +39,8 @@ const FORMULES = [
     nom:               'Lavage Complet',
     emoji:             '✨',
     prix:              50,
-    duree:             '2h',
-    duree_minutes:     120,
+    duree:             'Environ 1h30',
+    duree_minutes:     90,
     description:       'Extérieur + Intérieur combinés — le meilleur rapport qualité/prix',
     badge:             'Populaire',
     inclut_supplements: false
@@ -50,8 +50,8 @@ const FORMULES = [
     nom:               'Formule Showroom',
     emoji:             '💎',
     prix:              95,
-    duree:             '2h30 - 3h',
-    duree_minutes:     150,
+    duree:             'Environ 3h',
+    duree_minutes:     180,
     description:       'Lavage complet + cire de protection carrosserie, black wax peintures noires, gel brillant pneus, traitement plastiques, silicone joints, extraction eau sièges & moquettes incluse',
     badge:             'Premium',
     inclut_supplements: true
@@ -65,8 +65,8 @@ const SUPPLEMENTS = [
     emoji:               '🧽',
     description:         'Shampouinage par injecteur-extracteur — nettoyage en profondeur des sièges et moquettes',
     prix:                30,
-    duree_extra:         '1h',
-    duree_extra_minutes: 60,
+    duree_extra:         'Environ 45 min',
+    duree_extra_minutes: 45,
     incompatible_avec:   ['showroom']
   },
   {
@@ -76,8 +76,8 @@ const SUPPLEMENTS = [
     description:         'Application car wax — protection et brillance longue durée (3 à 6 mois). Nécessite un espace ombragé ou créneau matinal.',
     note:                '🎨 Nous disposons de la car wax pour véhicules clairs et du black wax pour véhicules foncés — précisez la couleur de votre véhicule dans le champ commentaire.',
     prix:                30,
-    duree_extra:         '1h',
-    duree_extra_minutes: 60,
+    duree_extra:         'Environ 45 min',
+    duree_extra_minutes: 45,
     incompatible_avec:   ['showroom']
   }
 ];
@@ -90,12 +90,14 @@ const CRENEAUX = {
 const CRENEAUX_FLAT        = [...CRENEAUX.matin, ...CRENEAUX.apres_midi];
 const MAX_PAR_JOUR         = 4;
 const MAX_PAR_DEMI_JOURNEE = 2;
-const JOURS_OUVRES         = [1, 2, 3, 4, 5]; // Lundi → Vendredi
-const JOURS_MAX_A_L_AVANCE = 60;
+const JOURS_OUVRES               = [1, 2, 3, 4, 5]; // Lundi → Vendredi
+const JOURS_MAX_A_L_AVANCE       = 60;
+const DELAI_DEPLACEMENT_MINUTES  = 30; // Trajet minimum entre deux RDV
 
 module.exports = {
   ENTREPRISE, FORMULES, SUPPLEMENTS,
   CRENEAUX, CRENEAUX_FLAT,
   MAX_PAR_JOUR, MAX_PAR_DEMI_JOURNEE,
-  JOURS_OUVRES, JOURS_MAX_A_L_AVANCE
+  JOURS_OUVRES, JOURS_MAX_A_L_AVANCE,
+  DELAI_DEPLACEMENT_MINUTES
 };

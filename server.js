@@ -42,15 +42,16 @@ function getDureeMinsFromNoms(formuleName, supplementNames) {
 }
 
 // Vérifie le chevauchement entre le nouveau créneau et les RDV existants
-// Conflit si: s < rEnd + TRAJET ET s + D > rStart - TRAJET
-function slotEnConflit(slotHeure, dureeRequise, reservations) {
-  const TRAJET = 30;
-  const s = toMin(slotHeure);
+// duree_bloquee = duree_service + DELAI_DEPLACEMENT
+// Conflit si: [s, s+sBloquee] chevauche [rStart, rStart+rBloquee]
+function slotEnConflit(slotHeure, serviceMinutes, reservations) {
+  const DELAI = config.DELAI_DEPLACEMENT_MINUTES;
+  const s        = toMin(slotHeure);
+  const sBloquee = serviceMinutes + DELAI;
   for (const r of reservations) {
-    const rStart = toMin(r.heureRdv);
-    const rDuree = getDureeMinsFromNoms(r.formule, r.supplements);
-    const rEnd   = rStart + rDuree;
-    if (s < rEnd + TRAJET && s + dureeRequise > rStart - TRAJET) return true;
+    const rStart   = toMin(r.heureRdv);
+    const rBloquee = getDureeMinsFromNoms(r.formule, r.supplements) + DELAI;
+    if (s < rStart + rBloquee && s + sBloquee > rStart) return true;
   }
   return false;
 }
@@ -90,12 +91,14 @@ app.get('/api/config', (req, res) => {
   });
 });
 
-// ── GET /api/disponibilites-mois?mois=YYYY-MM ─────────────────────────────────
+// ── GET /api/disponibilites-mois?mois=YYYY-MM&formule=ID&supplements=ID1,ID2 ──
 app.get('/api/disponibilites-mois', async (req, res) => {
-  const { mois } = req.query;
+  const { mois, formule: formuleId, supplements: suppsStr } = req.query;
   if (!mois || !/^\d{4}-\d{2}$/.test(mois)) return res.status(400).json({ erreur: 'Mois invalide.' });
+  const supplementIds  = suppsStr ? suppsStr.split(',').filter(Boolean) : [];
+  const serviceMinutes = formuleId ? calculerDureeMinutes(formuleId, supplementIds) : 45;
   try {
-    const dispo = await notion.getDisponibilitesMois(mois);
+    const dispo = await notion.getDisponibilitesMois(mois, serviceMinutes);
     res.json(dispo);
   } catch (err) {
     console.error('[API disponibilites-mois]', err.message);

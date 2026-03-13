@@ -313,6 +313,7 @@
           <div class="creneaux-label" id="label-apres">☀️ Après-midi</div>
           <div class="creneaux-grid" id="creneaux-apres"></div>
         </div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:12px;">Les créneaux indisponibles sont déjà réservés.</div>
       </div>
     </div>
   </div>
@@ -591,8 +592,9 @@ function initStep1(cfg) {
 }
 
 function selectFormule(id) {
+  if (state.formuleId !== id) state.dispoMois = {}; // Recharger le calendrier si changement de formule
   state.formuleId = id;
-  state.heure = null; // Réinitialiser le créneau si on change de formule
+  state.heure = null;
   document.querySelectorAll('.f-card').forEach(c =>
     c.classList.toggle('selected', c.dataset.id === id));
 
@@ -640,6 +642,7 @@ function toggleSupp(id) {
     el.classList.add('selected');
     document.getElementById('supp-check-' + id).textContent = '✓';
   }
+  state.dispoMois = {}; // Recharger le calendrier car la durée a changé
   updateStickyPrice();
 }
 
@@ -659,9 +662,10 @@ async function initStep2() {
 }
 
 async function chargerDispoMois() {
-  const moisStr = `${state.viewYear}-${padZ(state.viewMonth)}`;
+  const moisStr  = `${state.viewYear}-${padZ(state.viewMonth)}`;
+  const suppsStr = [...state.supplements].join(',');
   try {
-    const r = await fetch(`/api/disponibilites-mois?mois=${moisStr}`);
+    const r = await fetch(`/api/disponibilites-mois?mois=${moisStr}&formule=${state.formuleId || ''}&supplements=${suppsStr}`);
     const d = await r.json();
     state.dispoMois = { ...state.dispoMois, ...d };
   } catch { /* utiliser cache vide */ }

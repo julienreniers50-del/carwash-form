@@ -22,14 +22,15 @@ function toMin(hhmm) {
 }
 
 // Vérifie si un créneau est bloqué par chevauchement de durée
-// TRAJET = 30 min minimum entre deux RDV
-function isSlotBlocked(slotHeure, requestedDuree, reservations) {
-  const TRAJET = 30;
-  const s = toMin(slotHeure);
+// duree_bloquee = duree_service + DELAI_DEPLACEMENT
+function isSlotBlocked(slotHeure, serviceMinutes, reservations) {
+  const DELAI    = config.DELAI_DEPLACEMENT_MINUTES;
+  const s        = toMin(slotHeure);
+  const sBloquee = serviceMinutes + DELAI;
   for (const r of reservations) {
-    const rStart = toMin(r.heureRdv);
-    const rEnd   = rStart + getDureeMins(r.formule, r.supplements);
-    if (s < rEnd + TRAJET && s + requestedDuree > rStart - TRAJET) return true;
+    const rStart   = toMin(r.heureRdv);
+    const rBloquee = getDureeMins(r.formule, r.supplements) + DELAI;
+    if (s < rStart + rBloquee && s + sBloquee > rStart) return true;
   }
   return false;
 }
@@ -92,7 +93,7 @@ async function getDisponibilitesJour(dateStr) {
   };
 }
 
-async function getDisponibilitesMois(moisStr) {
+async function getDisponibilitesMois(moisStr, serviceMinutes = 45) {
   // moisStr = 'YYYY-MM'
   const [year, month] = moisStr.split('-').map(Number);
   const debut = `${moisStr}-01`;
@@ -122,8 +123,8 @@ async function getDisponibilitesMois(moisStr) {
 
   const result = {};
   for (const [date, reservations] of Object.entries(parJour)) {
-    // Jour complet = même un service de 45 min ne peut plus caser nulle part
-    const jour_complet = config.CRENEAUX_FLAT.every(slot => isSlotBlocked(slot, 45, reservations));
+    // Jour complet = la formule demandée ne peut plus caser nulle part
+    const jour_complet = config.CRENEAUX_FLAT.every(slot => isSlotBlocked(slot, serviceMinutes, reservations));
     result[date] = {
       total: reservations.length,
       jour_complet
