@@ -5,6 +5,35 @@ const config = require('./config');
 const notion      = new Client({ auth: process.env.NOTION_TOKEN });
 const DATABASE_ID = process.env.NOTION_DATABASE_ID;
 
+// ── Helpers durée ─────────────────────────────────────────────────────────────
+function getDureeMins(formuleName, supplementNames) {
+  const f = config.FORMULES.find(x => x.nom === formuleName);
+  let d = f ? f.duree_minutes : 60;
+  for (const nom of (supplementNames || [])) {
+    const s = config.SUPPLEMENTS.find(x => x.nom === nom);
+    if (s) d += s.duree_extra_minutes;
+  }
+  return d;
+}
+
+function toMin(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+}
+
+// Vérifie si un créneau est bloqué par chevauchement de durée
+// TRAJET = 30 min minimum entre deux RDV
+function isSlotBlocked(slotHeure, requestedDuree, reservations) {
+  const TRAJET = 30;
+  const s = toMin(slotHeure);
+  for (const r of reservations) {
+    const rStart = toMin(r.heureRdv);
+    const rEnd   = rStart + getDureeMins(r.formule, r.supplements);
+    if (s < rEnd + TRAJET && s + requestedDuree > rStart - TRAJET) return true;
+  }
+  return false;
+}
+
 async function creerReservation(data) {
   const { prenom, nom, telephone, email, adresse, codePostal, ville, commentaire,
           formule, supplements, dateRdv, heureRdv, prixTotal } = data;
@@ -15,7 +44,7 @@ async function creerReservation(data) {
       'Prénom':           { title:        [{ text: { content: prenom } }] },
       'Nom':              { rich_text:    [{ text: { content: nom } }] },
       'Téléphone':        { phone_number: telephone },
-      'Email':            { email:        email },
+      'Email':            { email:        email || null },
       'Adresse':          { rich_text:    [{ text: { content: adresse } }] },
       'Code postal':      { rich_text:    [{ text: { content: codePostal } }] },
       'Ville':            { rich_text:    [{ text: { content: ville } }] },
@@ -42,14 +71,20 @@ async function getDisponibilitesJour(dateStr) {
     }
   });
 
-  const creneaux_pris = res.results
-    .map(p => p.properties['Heure RDV']?.rich_text?.[0]?.text?.content)
-    .filter(Boolean);
+  const reservations = res.results
+    .map(p => ({
+      heureRdv:    p.properties['Heure RDV']?.rich_text?.[0]?.text?.content,
+      formule:     p.properties['Formule']?.select?.name,
+      supplements: p.properties['Suppléments']?.multi_select?.map(s => s.name) || []
+    }))
+    .filter(r => r.heureRdv);
 
+  const creneaux_pris    = reservations.map(r => r.heureRdv);
   const matin_count      = creneaux_pris.filter(c => config.CRENEAUX.matin.includes(c)).length;
   const apres_midi_count = creneaux_pris.filter(c => config.CRENEAUX.apres_midi.includes(c)).length;
 
   return {
+    reservations,
     creneaux_pris,
     matin_complet:      matin_count      >= config.MAX_PAR_DEMI_JOURNEE,
     apres_midi_complet: apres_midi_count >= config.MAX_PAR_DEMI_JOURNEE,
@@ -76,22 +111,22 @@ async function getDisponibilitesMois(moisStr) {
 
   const parJour = {};
   for (const page of res.results) {
-    const date  = page.properties['Date RDV']?.date?.start?.slice(0, 10);
-    const heure = page.properties['Heure RDV']?.rich_text?.[0]?.text?.content;
+    const date        = page.properties['Date RDV']?.date?.start?.slice(0, 10);
+    const heure       = page.properties['Heure RDV']?.rich_text?.[0]?.text?.content;
+    const formule     = page.properties['Formule']?.select?.name;
+    const supplements = page.properties['Suppléments']?.multi_select?.map(s => s.name) || [];
     if (!date || !heure) continue;
     if (!parJour[date]) parJour[date] = [];
-    parJour[date].push(heure);
+    parJour[date].push({ heureRdv: heure, formule, supplements });
   }
 
   const result = {};
-  for (const [date, creneaux] of Object.entries(parJour)) {
-    const matin_count      = creneaux.filter(c => config.CRENEAUX.matin.includes(c)).length;
-    const apres_midi_count = creneaux.filter(c => config.CRENEAUX.apres_midi.includes(c)).length;
+  for (const [date, reservations] of Object.entries(parJour)) {
+    // Jour complet = même un service de 45 min ne peut plus caser nulle part
+    const jour_complet = config.CRENEAUX_FLAT.every(slot => isSlotBlocked(slot, 45, reservations));
     result[date] = {
-      total:              creneaux.length,
-      matin_complet:      matin_count      >= config.MAX_PAR_DEMI_JOURNEE,
-      apres_midi_complet: apres_midi_count >= config.MAX_PAR_DEMI_JOURNEE,
-      jour_complet:       creneaux.length  >= config.MAX_PAR_JOUR
+      total: reservations.length,
+      jour_complet
     };
   }
   return result;
@@ -114,10 +149,10 @@ async function setupDatabase() {
     'Ville':            { rich_text: {} },
     'Commentaire':      { rich_text: {} },
     'Formule':          { select: { options: [
-      { name: 'Lavage Extérieur', color: 'blue'   },
-      { name: 'Lavage Intérieur', color: 'green'  },
-      { name: 'Lavage Complet',   color: 'purple' },
-      { name: 'Formule Showroom', color: 'yellow' }
+      { name: 'Lavage Intérieur',  color: 'green'  },
+      { name: 'Lavage Extérieur',  color: 'blue'   },
+      { name: 'Lavage Complet',    color: 'purple' },
+      { name: 'Formule Showroom',  color: 'yellow' }
     ]}},
     'Suppléments':      { multi_select: { options: [
       { name: 'Extraction eau sièges & moquettes', color: 'blue'   },

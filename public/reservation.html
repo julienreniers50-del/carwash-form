@@ -243,7 +243,7 @@
 <header class="res-header">
   <a href="/" class="back-link">← Retour</a>
   <div class="header-logo">
-    <img src="/logo.png" alt="AutoClean" onerror="this.style.display='none'">
+    <div style="width:28px;height:28px;background:linear-gradient(135deg,#0D1B3E,#00AAFF);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;">🚗</div>
     <span>Réservation</span>
   </div>
 </header>
@@ -344,9 +344,9 @@
         <input class="form-input" type="tel" id="telephone" name="telephone" placeholder="04xx xx xx xx ou +32 4xx" autocomplete="tel" required>
       </div>
       <div class="form-group">
-        <label class="form-label" for="email">Email <span>*</span></label>
-        <input class="form-input" type="email" id="email" name="email" placeholder="votre@email.com" autocomplete="email" required>
-        <div class="form-hint">La confirmation de réservation sera envoyée ici</div>
+        <label class="form-label" for="email">Email <span style="font-weight:400;color:var(--text-secondary)">(optionnel)</span></label>
+        <input class="form-input" type="email" id="email" name="email" placeholder="votre@email.com" autocomplete="email">
+        <div class="form-hint">Utilisé uniquement si nous ne parvenons pas à vous joindre par téléphone</div>
       </div>
       <div class="form-group">
         <label class="form-label" for="adresse">Adresse <span>*</span></label>
@@ -375,7 +375,7 @@
   <div class="confirm-wrap">
     <div class="checkmark">✓</div>
     <div class="confirm-title">Réservation confirmée !</div>
-    <div class="confirm-sub" id="confirm-email-msg">Un email de confirmation vous a été envoyé.</div>
+    <div class="confirm-sub">Nous serons chez vous à l'heure prévue avec tout le matériel.</div>
     <div class="confirm-card">
       <h4>Récapitulatif</h4>
       <div id="confirm-recap"></div>
@@ -386,15 +386,22 @@
 
 <!-- STICKY FOOTER -->
 <div class="sticky-footer" id="sticky-footer">
-  <div class="sticky-price-wrap">
-    <div class="sticky-label">Total estimé</div>
-    <div class="sticky-price"><span id="sticky-price">0</span>€</div>
+  <div style="display:flex;gap:20px;align-items:center;">
+    <div class="sticky-price-wrap">
+      <div class="sticky-label">Total estimé</div>
+      <div class="sticky-price"><span id="sticky-price">0</span>€</div>
+    </div>
+    <div id="sticky-duree-wrap" style="display:none;">
+      <div class="sticky-label">Durée</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text-secondary);" id="sticky-duree">—</div>
+    </div>
   </div>
   <div style="display:flex;gap:10px;align-items:center;">
     <button class="btn-back" id="btn-back" style="display:none;" onclick="goBack()">← Retour</button>
     <button class="btn-next" id="btn-next" disabled onclick="goNext()">Suivant →</button>
   </div>
 </div>
+
 
 <script>
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -426,6 +433,10 @@ function formatDateLong(str) {
   return `${JOURS_FR_LONG[d.getDay()]} ${d.getDate()} ${MOIS_FR[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 function getPrix() {
   if (!state.cfg || !state.formuleId) return 0;
   const f = state.cfg.FORMULES.find(x => x.id === state.formuleId);
@@ -437,8 +448,35 @@ function getPrix() {
   return p;
 }
 
+function getDureeMinutes() {
+  if (!state.cfg || !state.formuleId) return 0;
+  const f = state.cfg.FORMULES.find(x => x.id === state.formuleId);
+  let d = f.duree_minutes;
+  for (const id of state.supplements) {
+    const s = state.cfg.SUPPLEMENTS.find(x => x.id === id);
+    if (s && !s.incompatible_avec.includes(state.formuleId)) d += s.duree_extra_minutes;
+  }
+  return d;
+}
+
+function formatDuree(minutes) {
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h}h${String(m).padStart(2,'0')}` : `${h}h`;
+}
+
 function updateStickyPrice() {
   document.getElementById('sticky-price').textContent = getPrix();
+  const mins = getDureeMinutes();
+  const wrap = document.getElementById('sticky-duree-wrap');
+  const el   = document.getElementById('sticky-duree');
+  if (mins > 0) {
+    el.textContent = formatDuree(mins);
+    wrap.style.display = 'block';
+  } else {
+    wrap.style.display = 'none';
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -514,8 +552,7 @@ function initStep1(cfg) {
   grid.innerHTML = cfg.FORMULES.map(f => {
     const badge = f.badge ? `<span class="f-badge ${f.badge==='Populaire'?'pop':'prem'}">${f.badge}</span>` : '';
     const incl  = f.inclut_supplements ? `<div class="f-incl">✅ Inclus</div>` : '';
-    const descItems = f.description.split(', ');
-    const descHtml  = `<ul class="f-desc-list">${descItems.map(d => `<li>${d}</li>`).join('')}</ul>`;
+    const descHtml  = `<ul class="f-desc-list">${f.description.split(', ').map(d => `<li>${capitalize(d)}</li>`).join('')}</ul>`;
     return `<div class="f-card" data-id="${f.id}" onclick="selectFormule('${f.id}')">
       ${badge}
       <span class="f-emoji">${f.emoji}</span>
@@ -555,6 +592,7 @@ function initStep1(cfg) {
 
 function selectFormule(id) {
   state.formuleId = id;
+  state.heure = null; // Réinitialiser le créneau si on change de formule
   document.querySelectorAll('.f-card').forEach(c =>
     c.classList.toggle('selected', c.dataset.id === id));
 
@@ -613,6 +651,11 @@ async function initStep2() {
   renderCalendar();
   document.getElementById('cal-prev').onclick = () => changerMois(-1);
   document.getElementById('cal-next').onclick = () => changerMois(1);
+  // Si une date était déjà sélectionnée (retour depuis étape 3), recharger les créneaux
+  if (state.date) {
+    state.heure = null;
+    await selectDate(state.date);
+  }
 }
 
 async function chargerDispoMois() {
@@ -729,7 +772,8 @@ async function selectDate(dateStr) {
   document.getElementById('creneaux-date-label').textContent = formatDateLong(dateStr);
 
   try {
-    const r    = await fetch(`/api/creneaux?date=${dateStr}`);
+    const suppsStr = [...state.supplements].join(',');
+    const r    = await fetch(`/api/creneaux?date=${dateStr}&formule=${state.formuleId || ''}&supplements=${suppsStr}`);
     const data = await r.json();
     renderCreneaux(data);
   } catch {
@@ -859,8 +903,6 @@ function afficherErreurs(erreurs) {
 // ═══════════════════════════════════════════════════════════════════════════════
 function renderConfirmation(r) {
   const supps = r.supplements.length ? r.supplements.join(', ') : '—';
-  document.getElementById('confirm-email-msg').textContent =
-    `Un email de confirmation vous a été envoyé à ${r.email}`;
 
   const rows = [
     ['Formule',     r.formule],

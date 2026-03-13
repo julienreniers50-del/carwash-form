@@ -12,6 +12,49 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ── Helpers durée ─────────────────────────────────────────────────────────────
+function toMin(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+}
+
+// Durée totale en minutes à partir de l'ID formule + IDs suppléments
+function calculerDureeMinutes(formuleId, supplementIds) {
+  const f = config.FORMULES.find(x => x.id === formuleId);
+  if (!f) return 60;
+  let d = f.duree_minutes;
+  for (const id of (supplementIds || [])) {
+    const s = config.SUPPLEMENTS.find(x => x.id === id);
+    if (s && !s.incompatible_avec.includes(formuleId)) d += s.duree_extra_minutes;
+  }
+  return d;
+}
+
+// Durée totale à partir du NOM formule + NOMs suppléments (données Notion)
+function getDureeMinsFromNoms(formuleName, supplementNames) {
+  const f = config.FORMULES.find(x => x.nom === formuleName);
+  let d = f ? f.duree_minutes : 60;
+  for (const nom of (supplementNames || [])) {
+    const s = config.SUPPLEMENTS.find(x => x.nom === nom);
+    if (s) d += s.duree_extra_minutes;
+  }
+  return d;
+}
+
+// Vérifie le chevauchement entre le nouveau créneau et les RDV existants
+// Conflit si: s < rEnd + TRAJET ET s + D > rStart - TRAJET
+function slotEnConflit(slotHeure, dureeRequise, reservations) {
+  const TRAJET = 30;
+  const s = toMin(slotHeure);
+  for (const r of reservations) {
+    const rStart = toMin(r.heureRdv);
+    const rDuree = getDureeMinsFromNoms(r.formule, r.supplements);
+    const rEnd   = rStart + rDuree;
+    if (s < rEnd + TRAJET && s + dureeRequise > rStart - TRAJET) return true;
+  }
+  return false;
+}
+
 // ── Validation ────────────────────────────────────────────────────────────────
 function validerTel(tel) {
   return /^(\+32|0)[0-9]{8,9}$/.test(tel.replace(/[\s.\-()]/g, ''));
@@ -60,14 +103,32 @@ app.get('/api/disponibilites-mois', async (req, res) => {
   }
 });
 
-// ── GET /api/creneaux?date=YYYY-MM-DD ─────────────────────────────────────────
+// ── GET /api/creneaux?date=YYYY-MM-DD&formule=ID&supplements=id1,id2 ──────────
 app.get('/api/creneaux', async (req, res) => {
-  const { date } = req.query;
+  const { date, formule: formuleId, supplements: suppsStr } = req.query;
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ erreur: 'Date invalide.' });
   if (!validerDate(date)) return res.status(400).json({ erreur: 'Date non disponible.' });
+
+  const supplementIds = suppsStr ? suppsStr.split(',').filter(Boolean) : [];
+  const dureeRequise  = formuleId ? calculerDureeMinutes(formuleId, supplementIds) : 45;
+
   try {
-    const info = await notion.getDisponibilitesJour(date);
-    res.json(info);
+    const { reservations } = await notion.getDisponibilitesJour(date);
+
+    // Créneaux bloqués par chevauchement de durée réelle + 30 min de trajet
+    const creneaux_pris = config.CRENEAUX_FLAT.filter(slot =>
+      slotEnConflit(slot, dureeRequise, reservations)
+    );
+
+    const matin_complet      = config.CRENEAUX.matin.every(s => creneaux_pris.includes(s));
+    const apres_midi_complet = config.CRENEAUX.apres_midi.every(s => creneaux_pris.includes(s));
+
+    res.json({
+      creneaux_pris,
+      matin_complet,
+      apres_midi_complet,
+      jour_complet: creneaux_pris.length >= config.CRENEAUX_FLAT.length
+    });
   } catch {
     res.json({ creneaux_pris: [], matin_complet: false, apres_midi_complet: false, jour_complet: false });
   }
@@ -82,7 +143,8 @@ app.post('/api/reservation', async (req, res) => {
   if (!prenom || prenom.trim().length < 2)  erreurs.push('Prénom invalide.');
   if (!nom    || nom.trim().length < 2)     erreurs.push('Nom invalide.');
   if (!telephone || !validerTel(telephone)) erreurs.push('Téléphone belge invalide.');
-  if (!email || !validerEmail(email))       erreurs.push('Email invalide.');
+  // Email optionnel — validé seulement s'il est fourni
+  if (email && email.trim() && !validerEmail(email)) erreurs.push('Email invalide.');
   if (!adresse || !codePostal || !ville)    erreurs.push('Adresse incomplète.');
   if (codePostal && !/^\d{4}$/.test(codePostal.trim())) erreurs.push('Code postal invalide.');
 
@@ -94,21 +156,13 @@ app.post('/api/reservation', async (req, res) => {
 
   if (erreurs.length > 0) return res.status(400).json({ succes: false, erreurs });
 
-  // Double-check disponibilité avec règles demi-journée
+  // Double-check disponibilité avec règles de durée réelle
   try {
-    const dispo = await notion.getDisponibilitesJour(dateRdv);
-    if (dispo.creneaux_pris.includes(heureRdv)) {
-      return res.status(409).json({ succes: false, erreurs: ["Ce créneau vient d'être réservé. Choisissez-en un autre."] });
-    }
-    if (dispo.jour_complet) {
-      return res.status(409).json({ succes: false, erreurs: ["Cette journée est complète."] });
-    }
-    const estMatin = config.CRENEAUX.matin.includes(heureRdv);
-    if (estMatin && dispo.matin_complet) {
-      return res.status(409).json({ succes: false, erreurs: ["Les créneaux du matin sont complets pour cette journée."] });
-    }
-    if (!estMatin && dispo.apres_midi_complet) {
-      return res.status(409).json({ succes: false, erreurs: ["Les créneaux de l'après-midi sont complets pour cette journée."] });
+    const { reservations } = await notion.getDisponibilitesJour(dateRdv);
+    const dureeRequise = calculerDureeMinutes(formuleId, supplements || []);
+
+    if (slotEnConflit(heureRdv, dureeRequise, reservations)) {
+      return res.status(409).json({ succes: false, erreurs: ["Ce créneau n'est plus disponible. Veuillez en choisir un autre."] });
     }
   } catch { /* non bloquant */ }
 
@@ -122,7 +176,7 @@ app.post('/api/reservation', async (req, res) => {
 
   const reservation = {
     prenom: prenom.trim(), nom: nom.trim(),
-    telephone: telephone.trim(), email: email.trim().toLowerCase(),
+    telephone: telephone.trim(), email: (email || '').trim().toLowerCase(),
     adresse: adresse.trim(), codePostal: codePostal.trim(), ville: ville.trim(),
     commentaire: (commentaire || '').trim(),
     formule: formule.nom, supplements: nomsSupps,

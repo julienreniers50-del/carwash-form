@@ -153,9 +153,18 @@
     }
     .btn-white:hover{transform:translateY(-2px);}
 
+    /* ── LOGO BADGE ─────────────────────────────── */
+    .logo-badge{width:36px;height:36px;background:linear-gradient(135deg,var(--navy),var(--cyan));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+    .hero-logo-badge{width:80px;height:80px;background:linear-gradient(135deg,var(--navy),var(--cyan));border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 22px;box-shadow:0 8px 32px rgba(0,170,255,.3);}
+
+    /* ── DESC TIRETS ────────────────────────────── */
+    .f-desc-list{list-style:none;padding:0;margin-bottom:14px;}
+    .f-desc-list li{font-size:13px;color:var(--text-secondary);line-height:1.6;padding-left:14px;position:relative;margin-bottom:3px;}
+    .f-desc-list li::before{content:'—';position:absolute;left:0;color:var(--disabled);}
+
     /* ── FOOTER ─────────────────────────────────── */
     footer{background:var(--navy);padding:36px 20px;text-align:center;}
-    .footer-logo{height:32px;margin-bottom:12px;filter:brightness(0) invert(1);opacity:.9;}
+    .footer-logo-icon{font-size:28px;margin-bottom:12px;}
     .footer-name{font-size:16px;font-weight:700;color:#fff;margin-bottom:4px;}
     .footer-zone{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:10px;}
     .footer-copy{font-size:12px;color:rgba(255,255,255,.3);}
@@ -178,7 +187,7 @@
 <!-- HEADER -->
 <header class="header">
   <div class="logo">
-    <img src="/logo.png" alt="AutoClean" onerror="this.style.display='none'">
+    <div class="logo-badge">🚗</div>
     <span class="logo-name">AutoClean</span>
   </div>
   <a href="/reservation" class="btn-header">Prendre RDV →</a>
@@ -186,7 +195,7 @@
 
 <!-- HERO -->
 <section class="hero">
-  <img src="/logo.png" alt="AutoClean" onerror="this.style.display='none'">
+  <div class="hero-logo-badge">🚗</div>
   <h1>Une voiture<br>plus que Clean</h1>
   <p class="hero-sub">Lavage automobile à domicile, au plus proche de chez vous</p>
   <p class="hero-zone">Nous venons directement chez vous avec tout le matériel — Ittre &amp; Enghien, Hainaut</p>
@@ -243,7 +252,7 @@
 
 <!-- FOOTER -->
 <footer>
-  <img src="/logo.png" alt="AutoClean" class="footer-logo" onerror="this.style.display='none'">
+  <div class="footer-logo-icon">🚗</div>
   <div class="footer-name">AutoClean</div>
   <div class="footer-zone">Ittre &amp; Enghien, Hainaut</div>
   <div class="footer-copy">© 2025 AutoClean — Tous droits réservés</div>
@@ -260,6 +269,10 @@ const dotsEl  = document.getElementById('dots');
 const btnPrev = document.getElementById('btn-prev');
 const btnNext = document.getElementById('btn-next');
 
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 function buildSlide(f) {
   const badge = f.badge
     ? `<span class="f-badge ${f.badge==='Populaire'?'pop':'prem'}">${f.badge}</span>`
@@ -267,6 +280,7 @@ function buildSlide(f) {
   const incl = f.inclut_supplements
     ? `<div class="f-incl">✅ Extraction eau &amp; Cire déjà incluses</div>`
     : '';
+  const descHtml = `<ul class="f-desc-list">${f.description.split(', ').map(d => `<li>${capitalize(d)}</li>`).join('')}</ul>`;
   return `<div class="car-slide">
     <div class="f-card">
       ${badge}
@@ -274,7 +288,7 @@ function buildSlide(f) {
       <div class="f-name">${f.nom}</div>
       <div class="f-price"><sup>€</sup>${f.prix}</div>
       <div class="f-dur">⏱ ${f.duree}</div>
-      <div class="f-desc">${f.description}</div>
+      ${descHtml}
       ${incl}
       <a href="/reservation?formule=${f.id}" class="btn-card">Choisir cette formule →</a>
     </div>

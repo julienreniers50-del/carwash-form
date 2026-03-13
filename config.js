@@ -10,24 +10,27 @@ const ENTREPRISE = {
   telephone: process.env.OWNER_PHONE_NUMBER || ''
 };
 
+// Formules triées par prix croissant
 const FORMULES = [
-  {
-    id:                'exterieur',
-    nom:               'Lavage Extérieur',
-    emoji:             '🚗',
-    prix:              35,
-    duree:             '45 min',
-    description:       'Shampoing carrosserie, nettoyage jantes, gel brillant pneus, traitement plastiques extérieurs, silicone joints portes & coffre',
-    badge:             null,
-    inclut_supplements: false
-  },
   {
     id:                'interieur',
     nom:               'Lavage Intérieur',
     emoji:             '🪑',
     prix:              25,
     duree:             '45 min',
+    duree_minutes:     45,
     description:       'Aspiration complète habitacle, nettoyage plastiques intérieurs, vitres intérieures sans traces',
+    badge:             null,
+    inclut_supplements: false
+  },
+  {
+    id:                'exterieur',
+    nom:               'Lavage Extérieur',
+    emoji:             '🚗',
+    prix:              35,
+    duree:             '45 min',
+    duree_minutes:     45,
+    description:       'Shampoing carrosserie, nettoyage jantes, gel brillant pneus, traitement plastiques extérieurs, silicone joints portes & coffre',
     badge:             null,
     inclut_supplements: false
   },
@@ -37,6 +40,7 @@ const FORMULES = [
     emoji:             '✨',
     prix:              50,
     duree:             '2h',
+    duree_minutes:     120,
     description:       'Extérieur + Intérieur combinés — le meilleur rapport qualité/prix',
     badge:             'Populaire',
     inclut_supplements: false
@@ -47,6 +51,7 @@ const FORMULES = [
     emoji:             '💎',
     prix:              95,
     duree:             '2h30 - 3h',
+    duree_minutes:     150,
     description:       'Lavage complet + cire de protection carrosserie, black wax peintures noires, gel brillant pneus, traitement plastiques, silicone joints, extraction eau sièges & moquettes incluse',
     badge:             'Premium',
     inclut_supplements: true
@@ -55,23 +60,25 @@ const FORMULES = [
 
 const SUPPLEMENTS = [
   {
-    id:                'extraction',
-    nom:               'Extraction eau sièges & moquettes',
-    emoji:             '🧽',
-    description:       'Shampouinage par injecteur-extracteur — nettoyage en profondeur des sièges et moquettes',
-    prix:              30,
-    duree_extra:       '1h',
-    incompatible_avec: ['showroom']
+    id:                  'extraction',
+    nom:                 'Extraction eau sièges & moquettes',
+    emoji:               '🧽',
+    description:         'Shampouinage par injecteur-extracteur — nettoyage en profondeur des sièges et moquettes',
+    prix:                30,
+    duree_extra:         '1h',
+    duree_extra_minutes: 60,
+    incompatible_avec:   ['showroom']
   },
   {
-    id:                'cire',
-    nom:               'Cire de protection carrosserie',
-    emoji:             '✨',
-    description:       'Application car wax — protection et brillance longue durée (3 à 6 mois). Nécessite un espace ombragé ou créneau matinal.',
-    note:              '🎨 Nous disposons de la car wax pour véhicules clairs et du black wax pour véhicules foncés — précisez la couleur de votre véhicule dans le champ commentaire.',
-    prix:              30,
-    duree_extra:       '1h',
-    incompatible_avec: ['showroom']
+    id:                  'cire',
+    nom:                 'Cire de protection carrosserie',
+    emoji:               '✨',
+    description:         'Application car wax — protection et brillance longue durée (3 à 6 mois). Nécessite un espace ombragé ou créneau matinal.',
+    note:                '🎨 Nous disposons de la car wax pour véhicules clairs et du black wax pour véhicules foncés — précisez la couleur de votre véhicule dans le champ commentaire.',
+    prix:                30,
+    duree_extra:         '1h',
+    duree_extra_minutes: 60,
+    incompatible_avec:   ['showroom']
   }
 ];
 
