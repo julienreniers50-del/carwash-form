@@ -198,14 +198,57 @@
 
     .erreur-box{background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;color:#991B1B;line-height:1.6;display:none;}
 
+    /* ── PROMO CARD SHOWROOM ─────────────────────── */
+    .f-promo-row{display:flex;align-items:baseline;gap:8px;margin-bottom:0;}
+    .f-price-barre{font-size:16px;color:var(--disabled);text-decoration:line-through;}
+    .promo-card-badge{background:#FF4757;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;letter-spacing:.5px;}
+
+    /* ── MODALE PROMO EXPIRÉE ────────────────────── */
+    .promo-modal-overlay{
+      position:fixed;inset:0;background:rgba(13,27,62,.6);z-index:200;
+      display:flex;align-items:center;justify-content:center;padding:20px;
+    }
+    .promo-modal{
+      background:#fff;border-radius:var(--radius);padding:28px 24px;
+      max-width:360px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(13,27,62,.2);
+    }
+    .promo-modal h3{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:10px;}
+    .promo-modal p{font-size:14px;color:var(--text-secondary);line-height:1.6;margin-bottom:20px;}
+    .promo-modal-btns{display:flex;flex-direction:column;gap:10px;}
+    .btn-continuer{
+      background:linear-gradient(135deg,var(--navy),var(--cyan));color:#fff;
+      border:none;border-radius:50px;padding:13px;font-family:inherit;
+      font-size:15px;font-weight:700;cursor:pointer;
+    }
+    .btn-choisir{
+      background:none;border:1.5px solid var(--border);border-radius:50px;
+      padding:12px;font-family:inherit;font-size:14px;font-weight:600;
+      color:var(--text-secondary);cursor:pointer;
+    }
+
     /* ── CONFIRMATION (étape 4) ─────────────────── */
     .confirm-wrap{text-align:center;padding:40px 20px;}
     .checkmark{
       width:80px;height:80px;border-radius:50%;background:var(--success);
       display:flex;align-items:center;justify-content:center;margin:0 auto 24px;
-      font-size:36px;animation:pop .4s ease;
+      font-size:36px;
     }
-    @keyframes pop{0%{transform:scale(0)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+    @keyframes checkmark-pop{
+      0%  {transform:scale(0);opacity:0;}
+      60% {transform:scale(1.2);opacity:1;}
+      80% {transform:scale(0.9);}
+      100%{transform:scale(1);}
+    }
+    @keyframes fade-slide-up{
+      from{opacity:0;transform:translateY(20px);}
+      to  {opacity:1;transform:translateY(0);}
+    }
+    .checkmark.animate{animation:checkmark-pop 600ms cubic-bezier(.175,.885,.32,1.275) forwards;}
+    .confirm-title.animate{opacity:0;animation:fade-slide-up 400ms ease forwards;animation-delay:800ms;}
+    .confirm-sub.animate{opacity:0;animation:fade-slide-up 400ms ease forwards;animation-delay:1000ms;}
+    .confirm-card.animate{opacity:0;animation:fade-slide-up 400ms ease forwards;animation-delay:1200ms;}
+    .showroom-bonus{color:#FFD700;font-weight:700;font-size:15px;margin-bottom:16px;opacity:0;}
+    .showroom-bonus.animate{animation:fade-slide-up 400ms ease forwards;animation-delay:1100ms;}
     .confirm-title{font-size:24px;font-weight:800;color:var(--navy);margin-bottom:8px;}
     .confirm-sub{font-size:15px;color:var(--text-secondary);margin-bottom:28px;}
     .confirm-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:20px;text-align:left;margin-bottom:24px;}
@@ -387,10 +430,11 @@
 <!-- ÉTAPE 4 — Confirmation -->
 <div class="step-content" id="step4">
   <div class="confirm-wrap">
-    <div class="checkmark">✓</div>
-    <div class="confirm-title">Réservation confirmée !</div>
-    <div class="confirm-sub">Nous serons chez vous à l'heure prévue avec tout le matériel.</div>
-    <div class="confirm-card">
+    <div class="checkmark" id="anim-checkmark">✓</div>
+    <div class="showroom-bonus" id="showroom-bonus" style="display:none;">✨ Excellent choix — Formule Showroom réservée !</div>
+    <div class="confirm-title" id="anim-title">Réservation confirmée !</div>
+    <div class="confirm-sub" id="anim-sub">Nous serons chez vous à l'heure prévue avec tout le matériel.</div>
+    <div class="confirm-card" id="anim-card">
       <h4>Récapitulatif</h4>
       <div id="confirm-recap"></div>
     </div>
@@ -423,6 +467,7 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 const state = {
   cfg:           null,
+  promoInfo:     null,   // résultat de /api/promo
   step:          1,
   formuleId:     null,
   supplements:   new Set(),
@@ -454,7 +499,10 @@ function capitalize(str) {
 function getPrix() {
   if (!state.cfg || !state.formuleId) return 0;
   const f = state.cfg.FORMULES.find(x => x.id === state.formuleId);
-  let p = f.prix;
+  // Promo showroom si active
+  let p = (state.promoInfo && state.promoInfo.active && state.formuleId === 'showroom')
+    ? state.promoInfo.prix_promo
+    : f.prix;
   for (const id of state.supplements) {
     const s = state.cfg.SUPPLEMENTS.find(x => x.id === id);
     if (s && !s.incompatible_avec.includes(state.formuleId)) p += s.prix;
@@ -481,7 +529,23 @@ function formatDuree(minutes) {
 }
 
 function updateStickyPrice() {
-  document.getElementById('sticky-price').textContent = getPrix();
+  const prix = getPrix();
+  const stickyPrix = document.getElementById('sticky-price');
+  stickyPrix.textContent = prix;
+  // Mention "au lieu de X€" si promo showroom active
+  let oldPriceEl = document.getElementById('sticky-old-price');
+  if (state.promoInfo && state.promoInfo.active && state.formuleId === 'showroom') {
+    if (!oldPriceEl) {
+      oldPriceEl = document.createElement('div');
+      oldPriceEl.id = 'sticky-old-price';
+      oldPriceEl.style.cssText = 'font-size:11px;color:var(--text-secondary);text-decoration:line-through;';
+      stickyPrix.parentNode.appendChild(oldPriceEl);
+    }
+    oldPriceEl.textContent = `${state.promoInfo.prix_normal}€`;
+  } else if (oldPriceEl) {
+    oldPriceEl.remove();
+  }
+
   const mins = getDureeMinutes();
   const wrap = document.getElementById('sticky-duree-wrap');
   const el   = document.getElementById('sticky-duree');
@@ -564,14 +628,28 @@ function initStep1(cfg) {
   // Grille 2×2 des formules
   const grid = document.getElementById('formules-grid');
   grid.innerHTML = cfg.FORMULES.map(f => {
-    const badge = f.badge ? `<span class="f-badge ${f.badge==='Populaire'?'pop':'prem'}">${f.badge}</span>` : '';
-    const incl  = f.inclut_supplements ? `<div class="f-incl">✅ Inclus</div>` : '';
-    const descHtml  = `<ul class="f-desc-list">${f.description.split(', ').map(d => `<li>${capitalize(d)}</li>`).join('')}</ul>`;
+    const p    = state.promoInfo;
+    const isShowroomPromo = p && p.active && f.id === 'showroom';
+    // Badge : si promo active sur Showroom, remplace le badge "Premium"
+    let badge = '';
+    if (isShowroomPromo) {
+      badge = `<span class="f-badge" style="background:#FF4757;color:#fff;">-${p.pourcentage}% PROMO</span>`;
+    } else if (f.badge) {
+      badge = `<span class="f-badge ${f.badge==='Populaire'?'pop':'prem'}">${f.badge}</span>`;
+    }
+    const incl     = f.inclut_supplements ? `<div class="f-incl">✅ Inclus</div>` : '';
+    const descHtml = `<ul class="f-desc-list">${f.description.split(', ').map(d => `<li>${capitalize(d)}</li>`).join('')}</ul>`;
+    const prixHtml = isShowroomPromo
+      ? `<div class="f-promo-row">
+           <div class="f-price"><sup>€</sup>${p.prix_promo}</div>
+           <span class="f-price-barre">${p.prix_normal}€</span>
+         </div>`
+      : `<div class="f-price"><sup>€</sup>${f.prix}</div>`;
     return `<div class="f-card" data-id="${f.id}" onclick="selectFormule('${f.id}')">
       ${badge}
       <span class="f-emoji">${f.emoji}</span>
       <div class="f-name">${f.nom}</div>
-      <div class="f-price"><sup>€</sup>${f.prix}</div>
+      ${prixHtml}
       <div class="f-dur">⏱ ${f.duree}</div>
       ${descHtml}
       ${incl}
@@ -867,10 +945,14 @@ function renderRecapStep3() {
 // ═══════════════════════════════════════════════════════════════════════════════
 // SOUMISSION
 // ═══════════════════════════════════════════════════════════════════════════════
-async function soumettre() {
+async function soumettre(accepter_prix_normal = false) {
   const btn = document.getElementById('btn-next');
   btn.disabled = true;
   btn.textContent = 'Envoi en cours...';
+
+  const promoAttendue = !accepter_prix_normal
+    && state.promoInfo && state.promoInfo.active
+    && state.formuleId === 'showroom';
 
   const body = {
     prenom:      document.getElementById('prenom').value.trim(),
@@ -884,7 +966,9 @@ async function soumettre() {
     formuleId:   state.formuleId,
     supplements: [...state.supplements],
     dateRdv:     state.date,
-    heureRdv:    state.heure
+    heureRdv:    state.heure,
+    promo_attendue:       promoAttendue,
+    accepter_prix_normal: accepter_prix_normal
   };
 
   try {
@@ -895,6 +979,10 @@ async function soumettre() {
       state.reservation = res.reservation;
       renderConfirmation(res.reservation);
       goTo(4);
+    } else if (res.promo_expiree) {
+      afficherModalePromoExpiree(res.prix_actuel);
+      btn.disabled = false;
+      btn.textContent = 'Confirmer la réservation →';
     } else {
       afficherErreurs(res.erreurs || ['Une erreur est survenue.']);
       btn.disabled = false;
@@ -905,6 +993,27 @@ async function soumettre() {
     btn.disabled = false;
     btn.textContent = 'Confirmer la réservation →';
   }
+}
+
+function afficherModalePromoExpiree(prixActuel) {
+  const overlay = document.createElement('div');
+  overlay.className = 'promo-modal-overlay';
+  overlay.id = 'promo-modal';
+  overlay.innerHTML = `
+    <div class="promo-modal">
+      <h3>⚠️ Offre de lancement terminée</h3>
+      <p>La Formule Showroom est maintenant à <strong>${prixActuel}€</strong>.<br>Souhaitez-vous continuer à ce tarif ?</p>
+      <div class="promo-modal-btns">
+        <button class="btn-continuer" onclick="fermerModalePromo(); soumettre(true);">Continuer à ${prixActuel}€</button>
+        <button class="btn-choisir"   onclick="fermerModalePromo(); goTo(1);">Choisir une autre formule</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function fermerModalePromo() {
+  const m = document.getElementById('promo-modal');
+  if (m) m.remove();
 }
 
 function afficherErreurs(erreurs) {
@@ -931,17 +1040,76 @@ function renderConfirmation(r) {
 
   document.getElementById('confirm-recap').innerHTML =
     rows.map(([k,v]) => `<div class="confirm-row"><span>${k}</span><span>${v}</span></div>`).join('') +
-    `<div class="confirm-row confirm-total"><span>Total payé</span><span>${r.prixTotal}€</span></div>`;
+    `<div class="confirm-row confirm-total"><span>Total payé</span><span>${r.prixTotal}€</span></div>` +
+    (r.promo_lancement ? `<div style="font-size:12px;color:#047857;font-weight:600;margin-top:8px;">✅ Tarif de lancement appliqué</div>` : '');
+
+  // Lancer confettis après le rendu (le step4 sera visible)
+  setTimeout(() => lancerConfettis(r), 250);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONFETTIS — étape 4
+// ═══════════════════════════════════════════════════════════════════════════════
+function lancerConfettis(reservation) {
+  const isShowroom = reservation && reservation.formule === 'Formule Showroom';
+  const mobile     = window.innerWidth < 480;
+  const base       = mobile ? 80 : 120;
+  const colors     = ['#00AAFF','#0D1B3E','#33BBFF','#ffffff','#FFD700'];
+
+  // Animation checkmark + titre + card
+  document.getElementById('anim-checkmark').classList.add('animate');
+  setTimeout(() => document.getElementById('anim-title').classList.add('animate'), 800);
+  setTimeout(() => document.getElementById('anim-sub').classList.add('animate'), 1000);
+  setTimeout(() => document.getElementById('anim-card').classList.add('animate'), 1200);
+
+  // Bonus Showroom
+  if (isShowroom) {
+    const bonus = document.getElementById('showroom-bonus');
+    bonus.style.display = 'block';
+    setTimeout(() => bonus.classList.add('animate'), 1100);
+  }
+
+  // Explosion centrale (400ms)
+  setTimeout(() => {
+    confetti({ particleCount: base, spread: 80, origin: { x: 0.5, y: 0.4 },
+               colors, startVelocity: 35, gravity: 0.9, scalar: 1.1 });
+  }, 400);
+
+  // Côtés gauche + droit (700ms)
+  setTimeout(() => {
+    confetti({ particleCount: Math.round(base * 0.5), angle: 60, spread: 55,
+               origin: { x: 0, y: 0.6 }, colors: ['#00AAFF','#ffffff','#0D1B3E'] });
+    confetti({ particleCount: Math.round(base * 0.5), angle: 120, spread: 55,
+               origin: { x: 1, y: 0.6 }, colors: ['#00AAFF','#ffffff','#0D1B3E'] });
+  }, 700);
+
+  // Bonus Showroom : étoiles + diamants (1000ms)
+  if (isShowroom) {
+    setTimeout(() => {
+      try {
+        const star    = confetti.shapeFromText({ text: '⭐', scalar: 2 });
+        const diamond = confetti.shapeFromText({ text: '💎', scalar: 2 });
+        confetti({ particleCount: 40, spread: 100, origin: { x: 0.5, y: 0.3 },
+                   shapes: [star, diamond], scalar: 2, gravity: 0.6,
+                   colors: ['#FFD700','#FFF'] });
+      } catch { /* fallback si shapeFromText non dispo */ }
+    }, 1000);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════════════════════
-fetch('/api/config').then(r => r.json()).then(cfg => {
-  state.cfg = cfg;
+Promise.all([
+  fetch('/api/config').then(r => r.json()),
+  fetch('/api/promo').then(r => r.json()).catch(() => null)
+]).then(([cfg, promo]) => {
+  state.cfg       = cfg;
+  state.promoInfo = promo;
   initStep1(cfg);
   updateProgress();
 });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 </body>
 </html>

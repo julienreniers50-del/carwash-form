@@ -49,7 +49,7 @@ const FORMULES = [
     id:                'showroom',
     nom:               'Formule Showroom',
     emoji:             '💎',
-    prix:              95,
+    prix:              120,
     duree:             'Environ 3h',
     duree_minutes:     180,
     description:       'Lavage complet + cire de protection carrosserie, black wax peintures noires, gel brillant pneus, traitement plastiques, silicone joints, extraction eau sièges & moquettes incluse',
@@ -82,6 +82,17 @@ const SUPPLEMENTS = [
   }
 ];
 
+// Offre de lancement — source de vérité côté serveur
+// places_restantes et promo_active sont gérés dans Notion (NOTION_CONFIG_DATABASE_ID)
+const PROMO_LANCEMENT = {
+  formule_id:        'showroom',
+  prix_promo:        90,
+  prix_normal:       120,
+  places_total:      50,
+  pourcentage:       25,
+  date_fin_affichage:'2026-04-30'  // Après cette date, bannière "terminée" disparaît
+};
+
 // Créneaux : max 2 par demi-journée, max 4 par jour
 const CRENEAUX = {
   matin:      ['07:30', '08:30', '09:30', '10:30'],
@@ -95,7 +106,7 @@ const JOURS_MAX_A_L_AVANCE       = 60;
 const DELAI_DEPLACEMENT_MINUTES  = 30; // Trajet minimum entre deux RDV
 
 module.exports = {
-  ENTREPRISE, FORMULES, SUPPLEMENTS,
+  ENTREPRISE, FORMULES, SUPPLEMENTS, PROMO_LANCEMENT,
   CRENEAUX, CRENEAUX_FLAT,
   MAX_PAR_JOUR, MAX_PAR_DEMI_JOURNEE,
   JOURS_OUVRES, JOURS_MAX_A_L_AVANCE,

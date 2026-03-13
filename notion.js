@@ -2,8 +2,9 @@ require('dotenv').config();
 const { Client } = require('@notionhq/client');
 const config = require('./config');
 
-const notion      = new Client({ auth: process.env.NOTION_TOKEN });
-const DATABASE_ID = process.env.NOTION_DATABASE_ID;
+const notion           = new Client({ auth: process.env.NOTION_TOKEN });
+const DATABASE_ID      = process.env.NOTION_DATABASE_ID;
+const CONFIG_DB_ID     = process.env.NOTION_CONFIG_DATABASE_ID;
 
 // ── Helpers durée ─────────────────────────────────────────────────────────────
 function getDureeMins(formuleName, supplementNames) {
@@ -181,4 +182,33 @@ async function setupDatabase() {
   }
 }
 
-module.exports = { creerReservation, getDisponibilitesJour, getDisponibilitesMois, setupDatabase };
+// ── PROMO LANCEMENT — Config DB ───────────────────────────────────────────────
+
+async function getPromoConfig() {
+  if (!CONFIG_DB_ID) return null;
+  try {
+    const res = await notion.databases.query({ database_id: CONFIG_DB_ID, page_size: 1 });
+    if (!res.results.length) return null;
+    const p = res.results[0];
+    return {
+      pageId:           p.id,
+      places_restantes: p.properties['places_restantes']?.number ?? 0,
+      promo_active:     p.properties['promo_active']?.checkbox ?? false
+    };
+  } catch { return null; }
+}
+
+async function updatePromoConfig(pageId, nouvellePlaces) {
+  await notion.pages.update({
+    page_id: pageId,
+    properties: {
+      'places_restantes': { number: nouvellePlaces },
+      'promo_active':     { checkbox: nouvellePlaces > 0 }
+    }
+  });
+}
+
+module.exports = {
+  creerReservation, getDisponibilitesJour, getDisponibilitesMois, setupDatabase,
+  getPromoConfig, updatePromoConfig
+};

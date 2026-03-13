@@ -22,7 +22,8 @@ async function envoyerEmail(reservation) {
   }
 
   const { prenom, nom, telephone, email, adresse, codePostal, ville,
-          commentaire, formule, supplements, dateRdv, heureRdv, prixTotal } = reservation;
+          commentaire, formule, supplements, dateRdv, heureRdv, prixTotal,
+          promo_lancement } = reservation;
 
   const dateLongue = formatDateLong(dateRdv);
   const suppsTexte = supplements.length > 0 ? supplements.join(', ') : '—';
@@ -41,7 +42,8 @@ async function envoyerEmail(reservation) {
     `Adresse    : ${adresse}, ${codePostal} ${ville}`,
     `Commentaire: ${commentaire || '—'}`,
     ``,
-    `Prix total : ${prixTotal}€`
+    `Prix total : ${prixTotal}€`,
+    ...(promo_lancement ? [``, `🎉 Promo lancement appliquée — tarif 90€`] : [])
   ].join('\n');
 
   await transporter.sendMail({

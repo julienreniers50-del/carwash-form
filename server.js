@@ -9,6 +9,38 @@ const { envoyerEmail } = require('./notifications');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
+// ── Cache et verrou promo ─────────────────────────────────────────────────────
+let promoCache   = null;
+let promoCacheTs = 0;
+let promoLock    = false;
+
+async function withPromoLock(fn) {
+  let tries = 0;
+  while (promoLock && tries < 3) {
+    await new Promise(r => setTimeout(r, 500));
+    tries++;
+  }
+  if (promoLock) throw new Error('Promo lock timeout');
+  promoLock = true;
+  try { return await fn(); }
+  finally { promoLock = false; }
+}
+
+async function getPromoCached() {
+  const now = Date.now();
+  if (promoCache && now - promoCacheTs < 60000) return promoCache;
+  const raw = await notion.getPromoConfig();
+  const P   = config.PROMO_LANCEMENT;
+  promoCache = raw
+    ? { active: raw.promo_active, places_restantes: raw.places_restantes,
+        places_total: P.places_total, prix_promo: P.prix_promo,
+        prix_normal: P.prix_normal, pourcentage: P.pourcentage }
+    : { active: false, places_restantes: 0, places_total: P.places_total,
+        prix_promo: P.prix_promo, prix_normal: P.prix_normal, pourcentage: P.pourcentage };
+  promoCacheTs = now;
+  return promoCache;
+}
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -71,6 +103,18 @@ function validerDate(dateStr) {
   const diff = Math.ceil((d - aujourd) / 86400000);
   return diff <= config.JOURS_MAX_A_L_AVANCE;
 }
+
+// ── GET /api/promo ────────────────────────────────────────────────────────────
+app.get('/api/promo', async (req, res) => {
+  try {
+    res.json(await getPromoCached());
+  } catch (err) {
+    console.error('[PROMO]', err.message);
+    const P = config.PROMO_LANCEMENT;
+    res.json({ active: false, places_restantes: 0, places_total: P.places_total,
+               prix_promo: P.prix_promo, prix_normal: P.prix_normal, pourcentage: P.pourcentage });
+  }
+});
 
 // ── Routes pages ──────────────────────────────────────────────────────────────
 app.get('/',            (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
@@ -140,7 +184,8 @@ app.get('/api/creneaux', async (req, res) => {
 // ── POST /api/reservation ─────────────────────────────────────────────────────
 app.post('/api/reservation', async (req, res) => {
   const { prenom, nom, telephone, email, adresse, codePostal, ville,
-          formuleId, supplements, dateRdv, heureRdv, commentaire } = req.body;
+          formuleId, supplements, dateRdv, heureRdv, commentaire,
+          promo_attendue, accepter_prix_normal } = req.body;
 
   const erreurs = [];
   if (!prenom || prenom.trim().length < 2)  erreurs.push('Prénom invalide.');
@@ -169,8 +214,40 @@ app.post('/api/reservation', async (req, res) => {
     }
   } catch { /* non bloquant */ }
 
-  // Calcul prix total
-  let prixTotal = formule.prix;
+  // ── Calcul prix (avec logique promo Showroom) ─────────────────────────────
+  let prixBase = formule.prix;
+  let promoDecision = null; // { pageId, nouvelles_places } si promo appliquée
+
+  if (formuleId === config.PROMO_LANCEMENT.formule_id) {
+    if (accepter_prix_normal) {
+      prixBase = config.PROMO_LANCEMENT.prix_normal;
+    } else {
+      try {
+        promoDecision = await withPromoLock(async () => {
+          const p = await notion.getPromoConfig();
+          if (p && p.promo_active && p.places_restantes > 0) {
+            return { pageId: p.pageId, nouvelles_places: p.places_restantes - 1 };
+          }
+          return null;
+        });
+      } catch { promoDecision = null; }
+
+      if (promoDecision) {
+        prixBase = config.PROMO_LANCEMENT.prix_promo;
+      } else if (promo_attendue) {
+        promoCache = null; // forcer rechargement
+        return res.status(409).json({
+          succes: false, promo_expiree: true,
+          prix_actuel: config.PROMO_LANCEMENT.prix_normal,
+          erreurs: ["L'offre de lancement vient de se terminer. La Formule Showroom est maintenant à 120€."]
+        });
+      } else {
+        prixBase = config.PROMO_LANCEMENT.prix_normal;
+      }
+    }
+  }
+
+  let prixTotal = prixBase;
   const nomsSupps = [];
   for (const id of (supplements || [])) {
     const s = config.SUPPLEMENTS.find(x => x.id === id && !x.incompatible_avec.includes(formuleId));
@@ -183,15 +260,23 @@ app.post('/api/reservation', async (req, res) => {
     adresse: adresse.trim(), codePostal: codePostal.trim(), ville: ville.trim(),
     commentaire: (commentaire || '').trim(),
     formule: formule.nom, supplements: nomsSupps,
-    dateRdv, heureRdv, prixTotal
+    dateRdv, heureRdv, prixTotal,
+    promo_lancement: !!promoDecision
   };
 
   try {
     await notion.creerReservation(reservation);
-    console.log(`[NOTION] ✅ ${reservation.prenom} ${reservation.nom} — ${dateRdv} ${heureRdv} — ${formule.nom}`);
+    console.log(`[NOTION] ✅ ${reservation.prenom} ${reservation.nom} — ${dateRdv} ${heureRdv} — ${formule.nom}${promoDecision ? ' [PROMO 90€]' : ''}`);
   } catch (err) {
     console.error('[NOTION] ❌', err.code, err.message);
     return res.status(500).json({ succes: false, erreurs: ["Erreur d'enregistrement. Veuillez réessayer."] });
+  }
+
+  // Décrémenter le compteur promo après confirmation réussie
+  if (promoDecision) {
+    notion.updatePromoConfig(promoDecision.pageId, promoDecision.nouvelles_places)
+      .then(() => { promoCache = null; console.log(`[PROMO] ✅ Places restantes → ${promoDecision.nouvelles_places}`); })
+      .catch(e => console.error('[PROMO décrement]', e.message));
   }
 
   envoyerEmail(reservation).catch(e => console.error('[EMAIL]', e.message));
