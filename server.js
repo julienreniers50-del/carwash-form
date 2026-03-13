@@ -10,9 +10,11 @@ const app  = express();
 const PORT = process.env.PORT || 3000;
 
 // ── Cache et verrou promo ─────────────────────────────────────────────────────
-let promoCache   = null;
-let promoCacheTs = 0;
-let promoLock    = false;
+let promoCache        = null;
+let promoCacheTs      = 0;
+let promoLock         = false;
+// Compteur en mémoire — fallback si NOTION_CONFIG_DATABASE_ID non configuré
+let placesRestantesMem = config.PROMO_LANCEMENT.places_total;
 
 async function withPromoLock(fn) {
   let tries = 0;
@@ -31,12 +33,17 @@ async function getPromoCached() {
   if (promoCache && now - promoCacheTs < 60000) return promoCache;
   const raw = await notion.getPromoConfig();
   const P   = config.PROMO_LANCEMENT;
-  promoCache = raw
-    ? { active: raw.promo_active, places_restantes: raw.places_restantes,
-        places_total: P.places_total, prix_promo: P.prix_promo,
-        prix_normal: P.prix_normal, pourcentage: P.pourcentage }
-    : { active: false, places_restantes: 0, places_total: P.places_total,
-        prix_promo: P.prix_promo, prix_normal: P.prix_normal, pourcentage: P.pourcentage };
+  if (raw) {
+    // Source de vérité : Notion Config DB
+    promoCache = { active: raw.promo_active, places_restantes: raw.places_restantes,
+                   places_total: P.places_total, prix_promo: P.prix_promo,
+                   prix_normal: P.prix_normal, pourcentage: P.pourcentage };
+  } else {
+    // Fallback en mémoire — NOTION_CONFIG_DATABASE_ID non configuré
+    promoCache = { active: placesRestantesMem > 0, places_restantes: placesRestantesMem,
+                   places_total: P.places_total, prix_promo: P.prix_promo,
+                   prix_normal: P.prix_normal, pourcentage: P.pourcentage };
+  }
   promoCacheTs = now;
   return promoCache;
 }
@@ -225,17 +232,28 @@ app.post('/api/reservation', async (req, res) => {
       try {
         promoDecision = await withPromoLock(async () => {
           const p = await notion.getPromoConfig();
-          if (p && p.promo_active && p.places_restantes > 0) {
-            return { pageId: p.pageId, nouvelles_places: p.places_restantes - 1 };
+          if (p) {
+            // Notion Config DB disponible
+            if (p.promo_active && p.places_restantes > 0) {
+              return { pageId: p.pageId, nouvelles_places: p.places_restantes - 1, inMemory: false };
+            }
+            return null;
+          } else {
+            // Fallback en mémoire
+            if (placesRestantesMem > 0) {
+              placesRestantesMem--;
+              promoCache = null; // invalider cache
+              return { pageId: null, nouvelles_places: placesRestantesMem, inMemory: true };
+            }
+            return null;
           }
-          return null;
         });
       } catch { promoDecision = null; }
 
       if (promoDecision) {
         prixBase = config.PROMO_LANCEMENT.prix_promo;
       } else if (promo_attendue) {
-        promoCache = null; // forcer rechargement
+        promoCache = null;
         return res.status(409).json({
           succes: false, promo_expiree: true,
           prix_actuel: config.PROMO_LANCEMENT.prix_normal,
@@ -273,10 +291,12 @@ app.post('/api/reservation', async (req, res) => {
   }
 
   // Décrémenter le compteur promo après confirmation réussie
-  if (promoDecision) {
+  if (promoDecision && !promoDecision.inMemory) {
     notion.updatePromoConfig(promoDecision.pageId, promoDecision.nouvelles_places)
       .then(() => { promoCache = null; console.log(`[PROMO] ✅ Places restantes → ${promoDecision.nouvelles_places}`); })
       .catch(e => console.error('[PROMO décrement]', e.message));
+  } else if (promoDecision && promoDecision.inMemory) {
+    console.log(`[PROMO] ✅ Places restantes (mémoire) → ${promoDecision.nouvelles_places}`);
   }
 
   envoyerEmail(reservation).catch(e => console.error('[EMAIL]', e.message));
