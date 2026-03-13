@@ -73,7 +73,7 @@ const SUPPLEMENTS = [
     id:                  'cire',
     nom:                 'Cire de protection carrosserie',
     emoji:               '✨',
-    description:         'Application car wax — protection et brillance longue durée (3 à 6 mois). Nécessite un espace ombragé ou créneau matinal.',
+    description:         'Application car wax — protection et brillance de la carrosserie. Nécessite un espace ombragé ou créneau matinal.',
     note:                '🎨 Nous disposons de la car wax pour véhicules clairs et du black wax pour véhicules foncés — précisez la couleur de votre véhicule dans le champ commentaire.',
     prix:                30,
     duree_extra:         'Environ 45 min',
@@ -93,22 +93,19 @@ const PROMO_LANCEMENT = {
   date_fin_affichage:'2026-04-30'  // Après cette date, bannière "terminée" disparaît
 };
 
-// Créneaux : max 2 par demi-journée, max 4 par jour
-const CRENEAUX = {
-  matin:      ['07:30', '08:30', '09:30', '10:30'],
-  apres_midi: ['12:00', '13:30', '15:00', '16:30']
+// ── Système de créneaux dynamique ────────────────────────────────────────────
+const HORAIRES = {
+  debut:       '07:30',  // Premier créneau possible
+  fin:         '18:30',  // Heure limite absolue de FIN de prestation
+  deplacement: 30        // Délai de trajet entre clients (minutes)
 };
-const CRENEAUX_FLAT        = [...CRENEAUX.matin, ...CRENEAUX.apres_midi];
-const MAX_PAR_JOUR         = 4;
-const MAX_PAR_DEMI_JOURNEE = 2;
-const JOURS_OUVRES               = [1, 2, 3, 4, 5]; // Lundi → Vendredi
-const JOURS_MAX_A_L_AVANCE       = 60;
-const DELAI_DEPLACEMENT_MINUTES  = 30; // Trajet minimum entre deux RDV
+const INTERVALLES_CRENEAUX    = 60;                   // Créneaux proposés toutes les N minutes
+const SHOWROOM_CRENEAUX_FIXES = ['07:30', '15:30'];   // Showroom uniquement à ces heures
+const JOURS_OUVRES            = [1, 2, 3, 4, 5];      // Lundi → Vendredi
+const JOURS_MAX_A_L_AVANCE    = 60;
 
 module.exports = {
   ENTREPRISE, FORMULES, SUPPLEMENTS, PROMO_LANCEMENT,
-  CRENEAUX, CRENEAUX_FLAT,
-  MAX_PAR_JOUR, MAX_PAR_DEMI_JOURNEE,
-  JOURS_OUVRES, JOURS_MAX_A_L_AVANCE,
-  DELAI_DEPLACEMENT_MINUTES
+  HORAIRES, INTERVALLES_CRENEAUX, SHOWROOM_CRENEAUX_FIXES,
+  JOURS_OUVRES, JOURS_MAX_A_L_AVANCE
 };

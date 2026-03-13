@@ -2,14 +2,27 @@ require('dotenv').config();
 const { Client } = require('@notionhq/client');
 const config = require('./config');
 
-const notion           = new Client({ auth: process.env.NOTION_TOKEN });
-const DATABASE_ID      = process.env.NOTION_DATABASE_ID;
-const CONFIG_DB_ID     = process.env.NOTION_CONFIG_DATABASE_ID;
+const notion      = new Client({ auth: process.env.NOTION_TOKEN });
+const DATABASE_ID = process.env.NOTION_DATABASE_ID;
+const CONFIG_DB_ID = process.env.NOTION_CONFIG_DATABASE_ID;
 
-// ── Helpers durée ─────────────────────────────────────────────────────────────
-function getDureeMins(formuleName, supplementNames) {
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function toMin(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function fromMin(min) {
+  return `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
+}
+
+// Calcule la durée de prestation depuis le nom de formule et des suppléments
+// Utilisé comme fallback pour les anciennes réservations sans "Durée prestation"
+function getDureeMinsFromNoms(formuleName, supplementNames) {
   const f = config.FORMULES.find(x => x.nom === formuleName);
-  let d = f ? f.duree_minutes : 60;
+  if (!f) return 60;
+  if (f.inclut_supplements) return f.duree_minutes; // Showroom : suppléments inclus
+  let d = f.duree_minutes;
   for (const nom of (supplementNames || [])) {
     const s = config.SUPPLEMENTS.find(x => x.nom === nom);
     if (s) d += s.duree_extra_minutes;
@@ -17,51 +30,40 @@ function getDureeMins(formuleName, supplementNames) {
   return d;
 }
 
-function toMin(hhmm) {
-  const [h, m] = hhmm.split(':').map(Number);
-  return h * 60 + m;
-}
-
-// Vérifie si un créneau est bloqué par chevauchement de durée
-// duree_bloquee = duree_service + DELAI_DEPLACEMENT
-function isSlotBlocked(slotHeure, serviceMinutes, reservations) {
-  const DELAI    = config.DELAI_DEPLACEMENT_MINUTES;
-  const s        = toMin(slotHeure);
-  const sBloquee = serviceMinutes + DELAI;
-  for (const r of reservations) {
-    const rStart   = toMin(r.heureRdv);
-    const rBloquee = getDureeMins(r.formule, r.supplements) + DELAI;
-    if (s < rStart + rBloquee && s + sBloquee > rStart) return true;
-  }
-  return false;
-}
-
+// ── Créer une réservation ──────────────────────────────────────────────────────
 async function creerReservation(data) {
   const { prenom, nom, telephone, email, adresse, codePostal, ville, commentaire,
-          formule, supplements, dateRdv, heureRdv, prixTotal } = data;
+          formule, supplements, dateRdv, heureRdv, prixTotal, dureePrestation } = data;
+
+  const finEstimee        = fromMin(toMin(heureRdv) + dureePrestation);
+  const dureeTotaleBloquee = dureePrestation + config.HORAIRES.deplacement;
 
   return notion.pages.create({
     parent: { database_id: DATABASE_ID },
     properties: {
-      'Prénom':           { title:        [{ text: { content: prenom } }] },
-      'Nom':              { rich_text:    [{ text: { content: nom } }] },
-      'Téléphone':        { phone_number: telephone },
-      'Email':            { email:        email || null },
-      'Adresse':          { rich_text:    [{ text: { content: adresse } }] },
-      'Code postal':      { rich_text:    [{ text: { content: codePostal } }] },
-      'Ville':            { rich_text:    [{ text: { content: ville } }] },
-      'Commentaire':      { rich_text:    [{ text: { content: commentaire || '' } }] },
-      'Formule':          { select:       { name: formule } },
-      'Suppléments':      { multi_select: supplements.map(s => ({ name: s })) },
-      'Date RDV':         { date:         { start: dateRdv } },
-      'Heure RDV':        { rich_text:    [{ text: { content: heureRdv } }] },
-      'Prix Total':       { number:       prixTotal },
-      'Statut':           { select:       { name: 'À confirmer' } },
-      'Date inscription': { date:         { start: new Date().toISOString() } }
+      'Prénom':               { title:        [{ text: { content: prenom } }] },
+      'Nom':                  { rich_text:    [{ text: { content: nom } }] },
+      'Téléphone':            { phone_number: telephone },
+      'Email':                { email:        email || null },
+      'Adresse':              { rich_text:    [{ text: { content: adresse } }] },
+      'Code postal':          { rich_text:    [{ text: { content: codePostal } }] },
+      'Ville':                { rich_text:    [{ text: { content: ville } }] },
+      'Commentaire':          { rich_text:    [{ text: { content: commentaire || '' } }] },
+      'Formule':              { select:       { name: formule } },
+      'Suppléments':          { multi_select: supplements.map(s => ({ name: s })) },
+      'Date RDV':             { date:         { start: dateRdv } },
+      'Heure RDV':            { rich_text:    [{ text: { content: heureRdv } }] },
+      'Prix Total':           { number:       prixTotal },
+      'Durée prestation':     { number:       dureePrestation },
+      'Fin estimée':          { rich_text:    [{ text: { content: finEstimee } }] },
+      'Durée totale bloquée': { number:       dureeTotaleBloquee },
+      'Statut':               { select:       { name: 'À confirmer' } },
+      'Date inscription':     { date:         { start: new Date().toISOString() } }
     }
   });
 }
 
+// ── Réservations d'une journée ─────────────────────────────────────────────────
 async function getDisponibilitesJour(dateStr) {
   const res = await notion.databases.query({
     database_id: DATABASE_ID,
@@ -74,31 +76,27 @@ async function getDisponibilitesJour(dateStr) {
   });
 
   const reservations = res.results
-    .map(p => ({
-      heureRdv:    p.properties['Heure RDV']?.rich_text?.[0]?.text?.content,
-      formule:     p.properties['Formule']?.select?.name,
-      supplements: p.properties['Suppléments']?.multi_select?.map(s => s.name) || []
-    }))
+    .map(p => {
+      const heureRdv    = p.properties['Heure RDV']?.rich_text?.[0]?.text?.content;
+      const formule     = p.properties['Formule']?.select?.name;
+      const supplements = p.properties['Suppléments']?.multi_select?.map(s => s.name) || [];
+      // Durée stockée en priorité, fallback sur calcul par nom
+      const dureeLue    = p.properties['Durée prestation']?.number;
+      const dureePrestation = (dureeLue && dureeLue > 0)
+        ? dureeLue
+        : getDureeMinsFromNoms(formule, supplements);
+      return { heureRdv, formule, supplements, dureePrestation };
+    })
     .filter(r => r.heureRdv);
 
-  const creneaux_pris    = reservations.map(r => r.heureRdv);
-  const matin_count      = creneaux_pris.filter(c => config.CRENEAUX.matin.includes(c)).length;
-  const apres_midi_count = creneaux_pris.filter(c => config.CRENEAUX.apres_midi.includes(c)).length;
-
-  return {
-    reservations,
-    creneaux_pris,
-    matin_complet:      matin_count      >= config.MAX_PAR_DEMI_JOURNEE,
-    apres_midi_complet: apres_midi_count >= config.MAX_PAR_DEMI_JOURNEE,
-    jour_complet:       creneaux_pris.length >= config.MAX_PAR_JOUR
-  };
+  return { reservations };
 }
 
-async function getDisponibilitesMois(moisStr, serviceMinutes = 45) {
-  // moisStr = 'YYYY-MM'
+// ── Réservations d'un mois, groupées par jour ──────────────────────────────────
+async function getReservationsMois(moisStr) {
   const [year, month] = moisStr.split('-').map(Number);
   const debut = `${moisStr}-01`;
-  const fin   = new Date(year, month, 0).toISOString().slice(0, 10); // dernier jour du mois
+  const fin   = new Date(year, month, 0).toISOString().slice(0, 10);
 
   const res = await notion.databases.query({
     database_id: DATABASE_ID,
@@ -114,62 +112,61 @@ async function getDisponibilitesMois(moisStr, serviceMinutes = 45) {
   const parJour = {};
   for (const page of res.results) {
     const date        = page.properties['Date RDV']?.date?.start?.slice(0, 10);
-    const heure       = page.properties['Heure RDV']?.rich_text?.[0]?.text?.content;
+    const heureRdv    = page.properties['Heure RDV']?.rich_text?.[0]?.text?.content;
     const formule     = page.properties['Formule']?.select?.name;
     const supplements = page.properties['Suppléments']?.multi_select?.map(s => s.name) || [];
-    if (!date || !heure) continue;
+    const dureeLue    = page.properties['Durée prestation']?.number;
+    const dureePrestation = (dureeLue && dureeLue > 0)
+      ? dureeLue
+      : getDureeMinsFromNoms(formule, supplements);
+    if (!date || !heureRdv) continue;
     if (!parJour[date]) parJour[date] = [];
-    parJour[date].push({ heureRdv: heure, formule, supplements });
+    parJour[date].push({ heureRdv, formule, supplements, dureePrestation });
   }
 
-  const result = {};
-  for (const [date, reservations] of Object.entries(parJour)) {
-    // Jour complet = la formule demandée ne peut plus caser nulle part
-    const jour_complet = config.CRENEAUX_FLAT.every(slot => isSlotBlocked(slot, serviceMinutes, reservations));
-    result[date] = {
-      total: reservations.length,
-      jour_complet
-    };
-  }
-  return result;
+  return parJour;
 }
 
+// ── Setup base de données ──────────────────────────────────────────────────────
 async function setupDatabase() {
-  const db         = await notion.databases.retrieve({ database_id: DATABASE_ID });
-  const existantes = Object.keys(db.properties);
+  const db          = await notion.databases.retrieve({ database_id: DATABASE_ID });
+  const existantes  = Object.keys(db.properties);
   const titreActuel = Object.entries(db.properties).find(([, v]) => v.type === 'title')?.[0];
-  const updates    = {};
+  const updates     = {};
 
   if (titreActuel && titreActuel !== 'Prénom') updates[titreActuel] = { name: 'Prénom' };
 
   const nouvelles = {
-    'Nom':              { rich_text: {} },
-    'Téléphone':        { phone_number: {} },
-    'Email':            { email: {} },
-    'Adresse':          { rich_text: {} },
-    'Code postal':      { rich_text: {} },
-    'Ville':            { rich_text: {} },
-    'Commentaire':      { rich_text: {} },
-    'Formule':          { select: { options: [
+    'Nom':                  { rich_text: {} },
+    'Téléphone':            { phone_number: {} },
+    'Email':                { email: {} },
+    'Adresse':              { rich_text: {} },
+    'Code postal':          { rich_text: {} },
+    'Ville':                { rich_text: {} },
+    'Commentaire':          { rich_text: {} },
+    'Formule':              { select: { options: [
       { name: 'Lavage Intérieur',  color: 'green'  },
       { name: 'Lavage Extérieur',  color: 'blue'   },
       { name: 'Lavage Complet',    color: 'purple' },
       { name: 'Formule Showroom',  color: 'yellow' }
     ]}},
-    'Suppléments':      { multi_select: { options: [
+    'Suppléments':          { multi_select: { options: [
       { name: 'Extraction eau sièges & moquettes', color: 'blue'   },
       { name: 'Cire de protection carrosserie',    color: 'orange' }
     ]}},
-    'Date RDV':         { date: {} },
-    'Heure RDV':        { rich_text: {} },
-    'Prix Total':       { number: { format: 'euro' } },
-    'Statut':           { select: { options: [
+    'Date RDV':             { date: {} },
+    'Heure RDV':            { rich_text: {} },
+    'Prix Total':           { number: { format: 'euro' } },
+    'Durée prestation':     { number: {} },
+    'Fin estimée':          { rich_text: {} },
+    'Durée totale bloquée': { number: {} },
+    'Statut':               { select: { options: [
       { name: 'À confirmer', color: 'yellow' },
       { name: 'Confirmé',    color: 'green'  },
       { name: 'Terminé',     color: 'blue'   },
       { name: 'Annulé',      color: 'red'    }
     ]}},
-    'Date inscription': { date: {} }
+    'Date inscription':     { date: {} }
   };
 
   for (const [nom, cfg] of Object.entries(nouvelles)) {
@@ -182,8 +179,7 @@ async function setupDatabase() {
   }
 }
 
-// ── PROMO LANCEMENT — Config DB ───────────────────────────────────────────────
-
+// ── Config promo ───────────────────────────────────────────────────────────────
 async function getPromoConfig() {
   if (!CONFIG_DB_ID) return null;
   try {
@@ -209,6 +205,6 @@ async function updatePromoConfig(pageId, nouvellePlaces) {
 }
 
 module.exports = {
-  creerReservation, getDisponibilitesJour, getDisponibilitesMois, setupDatabase,
+  creerReservation, getDisponibilitesJour, getReservationsMois, setupDatabase,
   getPromoConfig, updatePromoConfig
 };

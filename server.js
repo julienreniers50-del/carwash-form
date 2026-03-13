@@ -34,12 +34,10 @@ async function getPromoCached() {
   const raw = await notion.getPromoConfig();
   const P   = config.PROMO_LANCEMENT;
   if (raw) {
-    // Source de vérité : Notion Config DB
     promoCache = { active: raw.promo_active, places_restantes: raw.places_restantes,
                    places_total: P.places_total, prix_promo: P.prix_promo,
                    prix_normal: P.prix_normal, pourcentage: P.pourcentage };
   } else {
-    // Fallback en mémoire — NOTION_CONFIG_DATABASE_ID non configuré
     promoCache = { active: placesRestantesMem > 0, places_restantes: placesRestantesMem,
                    places_total: P.places_total, prix_promo: P.prix_promo,
                    prix_normal: P.prix_normal, pourcentage: P.pourcentage };
@@ -51,16 +49,32 @@ async function getPromoCached() {
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ── Helpers durée ─────────────────────────────────────────────────────────────
+// ── Helpers créneaux ───────────────────────────────────────────────────────────
 function toMin(hhmm) {
   const [h, m] = hhmm.split(':').map(Number);
   return h * 60 + m;
 }
 
-// Durée totale en minutes à partir de l'ID formule + IDs suppléments
+function fromMin(min) {
+  return `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
+}
+
+// Génère tous les créneaux entre HORAIRES.debut et HORAIRES.fin (par pas de INTERVALLES_CRENEAUX)
+function genererTousCreneaux() {
+  const debut = toMin(config.HORAIRES.debut);
+  const fin   = toMin(config.HORAIRES.fin);
+  const slots = [];
+  for (let t = debut; t < fin; t += config.INTERVALLES_CRENEAUX) {
+    slots.push(fromMin(t));
+  }
+  return slots;
+}
+
+// Durée totale en minutes : formuleId + supplementIds
 function calculerDureeMinutes(formuleId, supplementIds) {
   const f = config.FORMULES.find(x => x.id === formuleId);
   if (!f) return 60;
+  if (f.inclut_supplements) return f.duree_minutes; // Showroom : suppléments inclus
   let d = f.duree_minutes;
   for (const id of (supplementIds || [])) {
     const s = config.SUPPLEMENTS.find(x => x.id === id);
@@ -69,30 +83,57 @@ function calculerDureeMinutes(formuleId, supplementIds) {
   return d;
 }
 
-// Durée totale à partir du NOM formule + NOMs suppléments (données Notion)
-function getDureeMinsFromNoms(formuleName, supplementNames) {
-  const f = config.FORMULES.find(x => x.nom === formuleName);
-  let d = f ? f.duree_minutes : 60;
-  for (const nom of (supplementNames || [])) {
-    const s = config.SUPPLEMENTS.find(x => x.nom === nom);
-    if (s) d += s.duree_extra_minutes;
-  }
-  return d;
-}
+// Calcule les créneaux disponibles pour une date/formule donnée
+// reservations : [{ heureRdv, formule, supplements, dureePrestation }]
+// Retourne : [{ heure: 'HH:MM', disponible: bool }]
+function calculerCreneauxDisponibles(reservations, formuleId, dureeService) {
+  const DELAI      = config.HORAIRES.deplacement;
+  const finJournee = toMin(config.HORAIRES.fin);
+  const showroomHeures = reservations
+    .filter(r => r.formule === 'Formule Showroom')
+    .map(r => r.heureRdv);
 
-// Vérifie le chevauchement entre le nouveau créneau et les RDV existants
-// duree_bloquee = duree_service + DELAI_DEPLACEMENT
-// Conflit si: [s, s+sBloquee] chevauche [rStart, rStart+rBloquee]
-function slotEnConflit(slotHeure, serviceMinutes, reservations) {
-  const DELAI = config.DELAI_DEPLACEMENT_MINUTES;
-  const s        = toMin(slotHeure);
-  const sBloquee = serviceMinutes + DELAI;
-  for (const r of reservations) {
-    const rStart   = toMin(r.heureRdv);
-    const rBloquee = getDureeMinsFromNoms(r.formule, r.supplements) + DELAI;
-    if (s < rStart + rBloquee && s + sBloquee > rStart) return true;
+  // ── Showroom : uniquement les 2 créneaux fixes ────────────────────────────
+  if (formuleId === 'showroom') {
+    return config.SHOWROOM_CRENEAUX_FIXES.map(h => {
+      const hMin = toMin(h);
+      // Règle 1 : prestation doit finir avant 18:30
+      if (hMin + dureeService > finJournee) return { heure: h, disponible: false };
+      // Règle 2 : chevauchement avec réservation existante
+      for (const r of reservations) {
+        const rStart   = toMin(r.heureRdv);
+        const rBloquee = r.dureePrestation + DELAI;
+        if (hMin < rStart + rBloquee && hMin + dureeService + DELAI > rStart) {
+          return { heure: h, disponible: false };
+        }
+      }
+      return { heure: h, disponible: true };
+    });
   }
-  return false;
+
+  // ── Autres formules : grille dynamique toutes les INTERVALLES_CRENEAUX min ─
+  return genererTousCreneaux().map(h => {
+    const hMin = toMin(h);
+
+    // Règle 1 : prestation doit finir avant 18:30
+    if (hMin + dureeService > finJournee) return { heure: h, disponible: false };
+
+    // Règle 2 : bloquer les créneaux fixes si un Showroom y est déjà réservé
+    if (config.SHOWROOM_CRENEAUX_FIXES.includes(h) && showroomHeures.includes(h)) {
+      return { heure: h, disponible: false };
+    }
+
+    // Règle 3 : chevauchement avec une réservation existante
+    for (const r of reservations) {
+      const rStart   = toMin(r.heureRdv);
+      const rBloquee = r.dureePrestation + DELAI;
+      if (hMin < rStart + rBloquee && hMin + dureeService + DELAI > rStart) {
+        return { heure: h, disponible: false };
+      }
+    }
+
+    return { heure: h, disponible: true };
+  });
 }
 
 // ── Validation ────────────────────────────────────────────────────────────────
@@ -130,34 +171,39 @@ app.get('/reservation', (req, res) => res.sendFile(path.join(__dirname, 'public'
 // ── GET /api/config ───────────────────────────────────────────────────────────
 app.get('/api/config', (req, res) => {
   res.json({
-    FORMULES:             config.FORMULES,
-    SUPPLEMENTS:          config.SUPPLEMENTS,
-    CRENEAUX:             config.CRENEAUX,
-    CRENEAUX_FLAT:        config.CRENEAUX_FLAT,
-    JOURS_OUVRES:         config.JOURS_OUVRES,
-    JOURS_MAX_A_L_AVANCE: config.JOURS_MAX_A_L_AVANCE,
-    MAX_PAR_JOUR:         config.MAX_PAR_JOUR,
-    MAX_PAR_DEMI_JOURNEE: config.MAX_PAR_DEMI_JOURNEE,
-    ENTREPRISE:           config.ENTREPRISE
+    FORMULES:                config.FORMULES,
+    SUPPLEMENTS:             config.SUPPLEMENTS,
+    HORAIRES:                config.HORAIRES,
+    INTERVALLES_CRENEAUX:    config.INTERVALLES_CRENEAUX,
+    SHOWROOM_CRENEAUX_FIXES: config.SHOWROOM_CRENEAUX_FIXES,
+    JOURS_OUVRES:            config.JOURS_OUVRES,
+    JOURS_MAX_A_L_AVANCE:    config.JOURS_MAX_A_L_AVANCE,
+    ENTREPRISE:              config.ENTREPRISE
   });
 });
 
-// ── GET /api/disponibilites-mois?mois=YYYY-MM&formule=ID&supplements=ID1,ID2 ──
+// ── GET /api/disponibilites-mois?mois=YYYY-MM&formule=ID&supplements=IDs ──────
 app.get('/api/disponibilites-mois', async (req, res) => {
   const { mois, formule: formuleId, supplements: suppsStr } = req.query;
   if (!mois || !/^\d{4}-\d{2}$/.test(mois)) return res.status(400).json({ erreur: 'Mois invalide.' });
-  const supplementIds  = suppsStr ? suppsStr.split(',').filter(Boolean) : [];
-  const serviceMinutes = formuleId ? calculerDureeMinutes(formuleId, supplementIds) : 45;
+  const supplementIds = suppsStr ? suppsStr.split(',').filter(Boolean) : [];
+  const dureeRequise  = formuleId ? calculerDureeMinutes(formuleId, supplementIds) : 45;
   try {
-    const dispo = await notion.getDisponibilitesMois(mois, serviceMinutes);
-    res.json(dispo);
+    const parJour = await notion.getReservationsMois(mois);
+    const result  = {};
+    for (const [date, reservations] of Object.entries(parJour)) {
+      const creneaux    = calculerCreneauxDisponibles(reservations, formuleId, dureeRequise);
+      const jour_complet = creneaux.every(c => !c.disponible);
+      result[date] = { total: reservations.length, jour_complet };
+    }
+    res.json(result);
   } catch (err) {
     console.error('[API disponibilites-mois]', err.message);
     res.json({});
   }
 });
 
-// ── GET /api/creneaux?date=YYYY-MM-DD&formule=ID&supplements=id1,id2 ──────────
+// ── GET /api/creneaux?date=YYYY-MM-DD&formule=ID&supplements=IDs ──────────────
 app.get('/api/creneaux', async (req, res) => {
   const { date, formule: formuleId, supplements: suppsStr } = req.query;
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ erreur: 'Date invalide.' });
@@ -168,23 +214,10 @@ app.get('/api/creneaux', async (req, res) => {
 
   try {
     const { reservations } = await notion.getDisponibilitesJour(date);
-
-    // Créneaux bloqués par chevauchement de durée réelle + 30 min de trajet
-    const creneaux_pris = config.CRENEAUX_FLAT.filter(slot =>
-      slotEnConflit(slot, dureeRequise, reservations)
-    );
-
-    const matin_complet      = config.CRENEAUX.matin.every(s => creneaux_pris.includes(s));
-    const apres_midi_complet = config.CRENEAUX.apres_midi.every(s => creneaux_pris.includes(s));
-
-    res.json({
-      creneaux_pris,
-      matin_complet,
-      apres_midi_complet,
-      jour_complet: creneaux_pris.length >= config.CRENEAUX_FLAT.length
-    });
+    const creneaux = calculerCreneauxDisponibles(reservations, formuleId, dureeRequise);
+    res.json({ date, formule: formuleId, creneaux });
   } catch {
-    res.json({ creneaux_pris: [], matin_complet: false, apres_midi_complet: false, jour_complet: false });
+    res.json({ date, formule: formuleId, creneaux: [] });
   }
 });
 
@@ -198,7 +231,6 @@ app.post('/api/reservation', async (req, res) => {
   if (!prenom || prenom.trim().length < 2)  erreurs.push('Prénom invalide.');
   if (!nom    || nom.trim().length < 2)     erreurs.push('Nom invalide.');
   if (!telephone || !validerTel(telephone)) erreurs.push('Téléphone belge invalide.');
-  // Email optionnel — validé seulement s'il est fourni
   if (email && email.trim() && !validerEmail(email)) erreurs.push('Email invalide.');
   if (!adresse || !codePostal || !ville)    erreurs.push('Adresse incomplète.');
   if (codePostal && !/^\d{4}$/.test(codePostal.trim())) erreurs.push('Code postal invalide.');
@@ -207,23 +239,32 @@ app.post('/api/reservation', async (req, res) => {
   if (!formule) erreurs.push('Formule invalide.');
 
   if (!dateRdv || !validerDate(dateRdv)) erreurs.push('Date invalide.');
-  if (!heureRdv || !config.CRENEAUX_FLAT.includes(heureRdv)) erreurs.push('Créneau invalide.');
+
+  // Validation de l'heure RDV
+  const heureValide = heureRdv && /^\d{2}:\d{2}$/.test(heureRdv)
+    && toMin(heureRdv) >= toMin(config.HORAIRES.debut)
+    && toMin(heureRdv) < toMin(config.HORAIRES.fin);
+  if (!heureValide) erreurs.push('Créneau invalide.');
+  if (formule && formule.id === 'showroom' && !config.SHOWROOM_CRENEAUX_FIXES.includes(heureRdv)) {
+    erreurs.push('Créneau Showroom invalide — uniquement 07:30 ou 15:30.');
+  }
 
   if (erreurs.length > 0) return res.status(400).json({ succes: false, erreurs });
 
-  // Double-check disponibilité avec règles de durée réelle
+  // Double-check disponibilité en temps réel
   try {
     const { reservations } = await notion.getDisponibilitesJour(dateRdv);
     const dureeRequise = calculerDureeMinutes(formuleId, supplements || []);
-
-    if (slotEnConflit(heureRdv, dureeRequise, reservations)) {
+    const creneaux     = calculerCreneauxDisponibles(reservations, formuleId, dureeRequise);
+    const creneauDemande = creneaux.find(c => c.heure === heureRdv);
+    if (!creneauDemande || !creneauDemande.disponible) {
       return res.status(409).json({ succes: false, erreurs: ["Ce créneau n'est plus disponible. Veuillez en choisir un autre."] });
     }
   } catch { /* non bloquant */ }
 
   // ── Calcul prix (avec logique promo Showroom) ─────────────────────────────
   let prixBase = formule.prix;
-  let promoDecision = null; // { pageId, nouvelles_places } si promo appliquée
+  let promoDecision = null;
 
   if (formuleId === config.PROMO_LANCEMENT.formule_id) {
     if (accepter_prix_normal) {
@@ -233,16 +274,14 @@ app.post('/api/reservation', async (req, res) => {
         promoDecision = await withPromoLock(async () => {
           const p = await notion.getPromoConfig();
           if (p) {
-            // Notion Config DB disponible
             if (p.promo_active && p.places_restantes > 0) {
               return { pageId: p.pageId, nouvelles_places: p.places_restantes - 1, inMemory: false };
             }
             return null;
           } else {
-            // Fallback en mémoire
             if (placesRestantesMem > 0) {
               placesRestantesMem--;
-              promoCache = null; // invalider cache
+              promoCache = null;
               return { pageId: null, nouvelles_places: placesRestantesMem, inMemory: true };
             }
             return null;
@@ -272,13 +311,15 @@ app.post('/api/reservation', async (req, res) => {
     if (s) { prixTotal += s.prix; nomsSupps.push(s.nom); }
   }
 
+  const dureePrestation = calculerDureeMinutes(formuleId, supplements || []);
+
   const reservation = {
     prenom: prenom.trim(), nom: nom.trim(),
     telephone: telephone.trim(), email: (email || '').trim().toLowerCase(),
     adresse: adresse.trim(), codePostal: codePostal.trim(), ville: ville.trim(),
     commentaire: (commentaire || '').trim(),
     formule: formule.nom, supplements: nomsSupps,
-    dateRdv, heureRdv, prixTotal,
+    dateRdv, heureRdv, prixTotal, dureePrestation,
     promo_lancement: !!promoDecision
   };
 
@@ -290,7 +331,6 @@ app.post('/api/reservation', async (req, res) => {
     return res.status(500).json({ succes: false, erreurs: ["Erreur d'enregistrement. Veuillez réessayer."] });
   }
 
-  // Décrémenter le compteur promo après confirmation réussie
   if (promoDecision && !promoDecision.inMemory) {
     notion.updatePromoConfig(promoDecision.pageId, promoDecision.nouvelles_places)
       .then(() => { promoCache = null; console.log(`[PROMO] ✅ Places restantes → ${promoDecision.nouvelles_places}`); })

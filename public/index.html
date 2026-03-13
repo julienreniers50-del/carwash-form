@@ -285,7 +285,9 @@
 
 <!-- FOOTER -->
 <footer>
-  <img src="/logo.png" alt="AutoClean" class="footer-logo">
+  <div style="background:#fff;border-radius:12px;padding:8px 16px;display:inline-block;margin-bottom:14px;">
+    <img src="/logo.png" alt="AutoClean" style="height:60px;object-fit:contain;display:block;">
+  </div>
   <div class="footer-name">AutoClean</div>
   <div class="footer-zone">Ittre &amp; Enghien, Hainaut</div>
   <div class="footer-copy">© 2025 AutoClean — Tous droits réservés</div>
@@ -407,7 +409,9 @@ function buildCarousel(formules) {
 
 function buildSupps(supplements) {
   const grid = document.getElementById('supps-grid');
-  grid.innerHTML = supplements.map(s => `
+  grid.innerHTML = supplements.map(s => {
+    const descHtml = `<ul class="f-desc-list">${s.description.split(', ').map(d => `<li>${capitalize(d)}</li>`).join('')}</ul>`;
+    return `
     <div class="supp-card">
       <div class="supp-top">
         <div class="supp-left">
@@ -415,14 +419,14 @@ function buildSupps(supplements) {
           <span class="supp-name">${s.nom}</span>
         </div>
         <div class="supp-right">
-          <div class="supp-price">+${s.prix}€</div>
-          <div class="supp-dur">+${s.duree_extra}</div>
+          <div class="supp-price">${s.prix}€</div>
+          <div class="supp-dur">${s.duree_extra}</div>
         </div>
       </div>
-      <div class="supp-desc">${s.description}</div>
+      ${descHtml}
       ${s.note ? `<div class="supp-note-wax">${s.note}</div>` : ''}
-      ${s.id === 'cire' ? '<div class="supp-note">🌤️ Nécessite un espace ombragé ou un créneau matinal</div>' : ''}
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 Promise.all([

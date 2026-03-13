@@ -172,6 +172,11 @@
     .creneau-btn.selected{background:var(--cyan);border-color:var(--cyan);color:#fff;}
     .creneau-btn.taken{background:#F8FAFF;color:var(--disabled);cursor:not-allowed;font-size:11px;}
     .loading-creneaux{text-align:center;color:var(--text-secondary);font-size:14px;padding:20px;}
+    /* Showroom créneaux */
+    .creneaux-showroom-grid{display:flex;flex-direction:column;gap:10px;}
+    .creneau-showroom{width:100%;text-align:left;padding:14px 20px;font-size:14px;font-weight:600;border-radius:12px;}
+    .creneaux-aucun{background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:16px;text-align:center;font-size:13px;color:#991B1B;margin-top:8px;}
+    .creneaux-aucun a{color:var(--cyan);font-weight:600;text-decoration:none;}
 
     /* ── FORMULAIRE (étape 3) ───────────────────── */
     .recap-mini{background:var(--bg-card);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:24px;}
@@ -361,15 +366,25 @@
       <div class="creneaux-date" id="creneaux-date-label"></div>
       <div class="loading-creneaux" id="creneaux-loading">Chargement des créneaux...</div>
       <div id="creneaux-content" style="display:none;">
-        <div class="creneaux-group">
+        <!-- Créneaux Showroom : 2 boutons fixes -->
+        <div class="creneaux-group" id="creneaux-showroom-group" style="display:none;">
+          <div class="creneaux-label">🚗 Choisissez votre créneau</div>
+          <div class="creneaux-showroom-grid" id="creneaux-showroom"></div>
+        </div>
+        <!-- Créneaux autres formules : grille dynamique -->
+        <div class="creneaux-group" id="creneaux-matin-group">
           <div class="creneaux-label" id="label-matin">🌅 Matin</div>
           <div class="creneaux-grid" id="creneaux-matin"></div>
         </div>
-        <div class="creneaux-group">
+        <div class="creneaux-group" id="creneaux-apres-group">
           <div class="creneaux-label" id="label-apres">☀️ Après-midi</div>
           <div class="creneaux-grid" id="creneaux-apres"></div>
         </div>
-        <div style="font-size:12px;color:var(--text-secondary);margin-top:12px;">Les créneaux indisponibles sont déjà réservés.</div>
+        <!-- Message si aucun créneau disponible -->
+        <div class="creneaux-aucun" id="creneaux-aucun" style="display:none;">
+          Aucun créneau disponible pour cette formule ce jour —
+          <a href="#" onclick="document.getElementById('cal-grid').scrollIntoView({behavior:'smooth'});return false;">choisir une autre date ↑</a>
+        </div>
       </div>
     </div>
   </div>
@@ -666,8 +681,8 @@ function initStep1(cfg) {
         <div class="supp-top2">
           <span class="supp-name">${s.emoji} ${s.nom}</span>
           <div class="supp-right">
-            <div class="supp-pricetag">+${s.prix}€</div>
-            <div class="supp-dur">+${s.duree_extra}</div>
+            <div class="supp-pricetag">${s.prix}€</div>
+            <div class="supp-dur">${s.duree_extra}</div>
           </div>
         </div>
         <div class="supp-desc">${s.description}</div>
@@ -871,47 +886,77 @@ async function selectDate(dateStr) {
     const data = await r.json();
     renderCreneaux(data);
   } catch {
-    renderCreneaux({ creneaux_pris: [], matin_complet: false, apres_midi_complet: false });
+    renderCreneaux({ creneaux: [], formule: state.formuleId });
   }
 }
 
 function renderCreneaux(data) {
   document.getElementById('creneaux-loading').style.display = 'none';
-  document.getElementById('creneaux-content').style.display  = 'block';
+  document.getElementById('creneaux-content').style.display = 'block';
 
-  const { creneaux_pris, matin_complet, apres_midi_complet } = data;
+  const { creneaux, formule } = data;
+  const isShowroom = formule === 'showroom';
 
-  // Matin
-  const lm = document.getElementById('label-matin');
-  lm.textContent = matin_complet ? '🌅 Matin (complet)' : '🌅 Matin';
-  lm.className   = 'creneaux-label' + (matin_complet ? ' complet' : '');
-  document.getElementById('creneaux-matin').innerHTML =
-    state.cfg.CRENEAUX.matin.map(h => creneauBtn(h, creneaux_pris)).join('');
+  const showroomGroup = document.getElementById('creneaux-showroom-group');
+  const matinGroup    = document.getElementById('creneaux-matin-group');
+  const apresGroup    = document.getElementById('creneaux-apres-group');
+  const aucunMsg      = document.getElementById('creneaux-aucun');
 
-  // Après-midi
-  const la = document.getElementById('label-apres');
-  la.textContent = apres_midi_complet ? '☀️ Après-midi (complet)' : '☀️ Après-midi';
-  la.className   = 'creneaux-label' + (apres_midi_complet ? ' complet' : '');
-  document.getElementById('creneaux-apres').innerHTML =
-    state.cfg.CRENEAUX.apres_midi.map(h => creneauBtn(h, creneaux_pris)).join('');
+  if (isShowroom) {
+    // ── Showroom : 2 boutons fixes, grisés si indisponibles ─────────────────
+    showroomGroup.style.display = 'block';
+    matinGroup.style.display    = 'none';
+    apresGroup.style.display    = 'none';
+    aucunMsg.style.display      = 'none';
+
+    document.getElementById('creneaux-showroom').innerHTML = (creneaux.length ? creneaux : [
+      { heure: '07:30', disponible: false }, { heure: '15:30', disponible: false }
+    ]).map(c => {
+      const label = c.heure === '07:30' ? '🌅 Matin — 07h30' : '🌇 Après-midi — 15h30';
+      const cls   = c.disponible ? (state.heure === c.heure ? 'selected' : '') : 'taken';
+      const click = c.disponible ? `onclick="selectCreneau('${c.heure}')"` : '';
+      const suffix = c.disponible ? '' : ' — Complet';
+      return `<button class="creneau-btn creneau-showroom ${cls}" data-heure="${c.heure}" ${click} type="button">${label}${suffix}</button>`;
+    }).join('');
+
+  } else {
+    // ── Autres formules : grille dynamique, indisponibles masqués ───────────
+    showroomGroup.style.display = 'none';
+    matinGroup.style.display    = 'block';
+    apresGroup.style.display    = 'block';
+
+    const DEBUT_APREM  = '13:00';
+    const disponMatin  = creneaux.filter(c => c.disponible && c.heure <  DEBUT_APREM);
+    const disponAprem  = creneaux.filter(c => c.disponible && c.heure >= DEBUT_APREM);
+
+    document.getElementById('creneaux-matin').innerHTML = disponMatin.length
+      ? disponMatin.map(c => creneauBtn(c.heure)).join('')
+      : '<span style="font-size:12px;color:var(--disabled);">Aucun créneau le matin</span>';
+
+    document.getElementById('creneaux-apres').innerHTML = disponAprem.length
+      ? disponAprem.map(c => creneauBtn(c.heure)).join('')
+      : '<span style="font-size:12px;color:var(--disabled);">Aucun créneau l\'après-midi</span>';
+
+    aucunMsg.style.display = (disponMatin.length === 0 && disponAprem.length === 0) ? 'block' : 'none';
+  }
 
   document.getElementById('creneaux-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-function creneauBtn(heure, pris) {
-  const taken = pris.includes(heure);
-  const sel   = state.heure === heure;
-  const cls   = taken ? 'taken' : (sel ? 'selected' : '');
-  const label = taken ? 'Complet' : heure;
-  const click = taken ? '' : `onclick="selectCreneau('${heure}')"`;
-  return `<button class="creneau-btn ${cls}" ${click} type="button">${label}</button>`;
+function creneauBtn(heure) {
+  const cls = state.heure === heure ? 'selected' : '';
+  return `<button class="creneau-btn ${cls}" onclick="selectCreneau('${heure}')" type="button">${heure}</button>`;
 }
 
 function selectCreneau(heure) {
   state.heure = heure;
-  // Rafraîchir
+  // Mettre à jour la sélection — Showroom
+  document.getElementById('creneaux-showroom').querySelectorAll('.creneau-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.heure === heure);
+  });
+  // Mettre à jour la sélection — autres formules
   ['creneaux-matin','creneaux-apres'].forEach(id => {
-    document.getElementById(id).querySelectorAll('.creneau-btn:not(.taken)').forEach(b => {
+    document.getElementById(id).querySelectorAll('.creneau-btn').forEach(b => {
       b.classList.toggle('selected', b.textContent === heure);
     });
   });
